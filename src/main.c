@@ -2,68 +2,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ncurses.h>
+#include "minofunc.h"
 
 bool hatersgonnahate = true;
-
-typedef struct Vector {
-    char dy; 
-    char dx;
-} vec_t;
-
-typedef struct Mino {
-    char y;
-    char x;
-    char rot;
-    char type;
-    vec_t v[3];
-} mino_t;
-
-
-void render_mino(mino_t *mino, char ch) {
-    mvprintw(1, 3, "rot: %d", mino->rot);
-    mvaddch(mino->y, mino->x, ch);
-    for (char i = 0; i < 3; i++) {      
-        mvaddch(mino->y + mino->v[i].dy,
-                 mino->x + mino->v[i].dx,
-                 ch);
-    }
-}
-
-void rotate_mino(mino_t *mino) {         /*        flip x and y         */
-    for (char i = 0; i < 3; i++) {      /* If not even, also flip sign */ 
-        mino->v[i].dy = mino->v[i].dy ^ mino->v[i].dx; 
-        mino->v[i].dx = mino->v[i].dy ^ mino->v[i].dx; 
-        mino->v[i].dy = mino->v[i].dy ^ mino->v[i].dx; 
-
-        if (mino->rot % 2 != 0) {      
-            mino->v[i].dy = 1 + (mino->v[i].dy ^ 255);
-            mino->v[i].dx = 1 + (mino->v[i].dx ^ 255);
-        }
-    }
-
-    mino->rot = mino->rot < 3 ? mino->rot + 1 : 0;
-}
-
-mino_t *make_mino(char type) {
-    mino_t *new_mino = malloc(sizeof(mino_t));
-    if (new_mino == NULL) {
-        return NULL;
-    }
-    new_mino->type = type;
-    new_mino->rot = 0;
-    new_mino->x = 8;
-    new_mino->y = 8;
-    switch (type) {
-        case 'I':
-            new_mino->v[0].dy = 0; 
-            new_mino->v[0].dx = -1; 
-            new_mino->v[1].dy = 0; 
-            new_mino->v[1].dx = 1; 
-            new_mino->v[2].dy = 0; 
-            new_mino->v[2].dx = 2; 
-    }
-    return new_mino;
-}
+char COLOR_ORANGE = 9;
+char COLOR_PURPLE = 10;
 
 int main(){
     initscr();
@@ -72,26 +15,49 @@ int main(){
     scrollok(stdscr, TRUE);
     nodelay(stdscr, TRUE);
 
-    mino_t *mino = make_mino('I');
+    start_color();
+    init_color(COLOR_ORANGE, 929, 500, 100);
+    init_color(COLOR_PURPLE, 650, 20, 900);
 
-    render_mino(mino, 'O');
+    init_pair(1, COLOR_CYAN, COLOR_CYAN);       // I
+    init_pair(2, COLOR_YELLOW, COLOR_YELLOW);  //  O 
+    init_pair(3, COLOR_BLUE, COLOR_BLUE);       // J
+    init_pair(4, COLOR_ORANGE, COLOR_ORANGE);  //  L
+    init_pair(5, COLOR_GREEN, COLOR_GREEN);     // S
+    init_pair(6, COLOR_RED, COLOR_RED);        //  Z
+    init_pair(7, COLOR_PURPLE, COLOR_PURPLE);   // T
+    init_pair(8, COLOR_BLACK, COLOR_BLACK);    //  Blank 
+    init_pair(9, COLOR_WHITE, COLOR_BLACK);    //  Text 
+                                   
+    mino_t *mino = make_mino('S');
+    render_mino(mino, '1');
 
     while (hatersgonnahate) {
         switch (getch()) {
+            case 'r':
+                render_mino(mino, '0');
+                rotate_mino(mino, 1);
+                render_mino(mino, '1');
+                break;
+            case 's':
+                render_mino(mino, '0');
+                rotate_mino(mino, -1);
+                render_mino(mino, '1');
+                break;
             case 't':
-                render_mino(mino, ' ');
-                rotate_mino(mino);
-                render_mino(mino, 'O');
+                render_mino(mino, '0');
+                rotate_mino(mino, 2);
+                render_mino(mino, '1');
                 break;
             case 'n':
-                render_mino(mino, ' ');
+                render_mino(mino, '0');
                 mino->x--;
-                render_mino(mino, 'O');
+                render_mino(mino, '1');
                 break;
             case 'i':
-                render_mino(mino, ' ');
+                render_mino(mino, '0');
                 mino->x++;
-                render_mino(mino, 'O');
+                render_mino(mino, '1');
                 break;
             case 'c':
                 free(mino);
@@ -146,4 +112,25 @@ a  ▒▒     0, 1
 b  ><     0, 0
 c  ▒▒     0,-1
 d  ▒▒     0,-2
+
+
+
+                1234      1234       1234       1234      1234 
+               a         a          a          a         a     
+               b  OO     b  O       b          bO        b  OO 
+               c OX      c  XO      c  XO      cOX       c OX  
+               d         d   O      d OO       d O       d     
+         dir:   right ->  down  ->   left  ->   up   ->   right
+
+Where to place blocks from origin?
+   y x   y x   y x   y x
+r:(0,0) (0,-) (-,0) (-,+)  0  
+         - +   + +   2 0
+d:(0,0) (-,0) (0,+) (+,+)  1 
+         + +   + -   0 -2
+l:(0,0) (0,+) (+,0) (+,-)  2 
+         + -   - -  -2 0
+u:(0,0) (+,0) (0,-) (-,-)  3 
+         - -   - +   0 2 
+r:(0,0) (0,-) (-,0) (-,+)  0  
 */

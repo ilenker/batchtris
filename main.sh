@@ -1,2 +1,2 @@
-gcc src/main.c -lncurses -o batchtris
+gcc -I./src src/main.c src/minofunc.c -lncurses -o  batchtris
 ./batchtris
