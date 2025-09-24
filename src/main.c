@@ -13,7 +13,7 @@ int main(){
     cbreak();
     noecho();
     scrollok(stdscr, TRUE);
-    nodelay(stdscr, TRUE);
+    //nodelay(stdscr, TRUE);
 
     start_color();
     init_color(COLOR_ORANGE, 929, 500, 100);
@@ -29,7 +29,7 @@ int main(){
     init_pair(8, COLOR_BLACK, COLOR_BLACK);    //  Blank 
     init_pair(9, COLOR_WHITE, COLOR_BLACK);    //  Text 
                                    
-    mino_t *mino = make_mino('S');
+    mino_t *mino = make_mino(I);
     render_mino(mino, '1');
 
     while (hatersgonnahate) {
@@ -64,6 +64,7 @@ int main(){
                 endwin();
                 return 0;
         }
+    debug_display(mino, 1);
     }
 }
 
@@ -91,7 +92,7 @@ t
                c         c  O       cOOXO      c X       c     
                d         d  O       d          d O       d     
          dir:   right ->  down  ->   left  ->   up   ->   right
-origin delta:   0,0      +1,0        0,+1      -1,0       0,-1    
+origin delta:   0,0      0,+1        +1,0      0,-1       -1,0    
 
 Where to place blocks from origin?
    y x    y  x   y   x   y   x
