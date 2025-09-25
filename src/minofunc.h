@@ -39,16 +39,16 @@ typedef enum ShapeType {
 } shape_t;
 
 typedef struct Vector {
-    char dy; 
-    char dx;
+    int dy; 
+    int dx;
 } vec_t;
 
 typedef struct Mino {
     vec_t v[3];             // 6
     shape_t type;           // 4
-    char y;                 // 1
-    char x;                 // 1
-    unsigned char dir;      // 1
+    int y;                 // 1
+    int x;                 // 1
+    int dir;      // 1
     bool falling;
 } mino_t;
 
