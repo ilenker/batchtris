@@ -2,26 +2,31 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ncurses.h>
+#include <panel.h>
 #include "minofunc.h"
 #include "boardfunc.h"
 
 bool g_hatersgonnahate = true;
 char COLOR_ORANGE = 9;
 char COLOR_PURPLE = 10;
+char COLOR_GREY = 11;
 char g_debug_verbosity = 1;
 int g_gravity_timer = 500;
 
 
-int main(){
+int main() {
     initscr();
     cbreak();
     noecho();
     scrollok(stdscr, FALSE);
     nodelay(stdscr, TRUE);
+    curs_set(0);
+    
 
     start_color();
     init_color(COLOR_ORANGE, 929, 500, 100);
     init_color(COLOR_PURPLE, 650, 20, 900);
+    init_color(COLOR_GREY, 200, 200, 200);
     init_pair(1, COLOR_CYAN, COLOR_CYAN);       // I
     init_pair(2, COLOR_YELLOW, COLOR_YELLOW);  //  O 
     init_pair(3, COLOR_BLUE, COLOR_BLUE);       // J
@@ -31,53 +36,83 @@ int main(){
     init_pair(7, COLOR_PURPLE, COLOR_PURPLE);   // T
     init_pair(8, COLOR_BLACK, COLOR_BLACK);    //  Blank 
     init_pair(9, COLOR_WHITE, COLOR_BLACK);    //  Text 
+    init_pair(10, COLOR_ORANGE, COLOR_GREY);    //  Text 
+    wbkgd(stdscr, COLOR_PAIR(10));
                                    
-    mino_t *mino = make_mino(T);
-    board_t *board = calloc(1, sizeof(board_t));
 
-    init_board(board, 20, 10);
-
-    WINDOW *board_win = newwin(20, 20, 6, 3);
+    WINDOW *board_win = newwin(20, 20, 6, 3);  // window for the board itself
     scrollok(board_win, FALSE);
     nodelay(board_win, TRUE);
+    wbkgd(board_win, COLOR_PAIR(8));
+
+    WINDOW *piece_win = newwin(20, 20, 6, 3); // window for the falling mino 
+    scrollok(piece_win, FALSE);
+    nodelay(piece_win, TRUE);
+    //wbkgd(piece_win, COLOR_PAIR(8));
+
+    mino_t *mino = make_mino(T);
+    board_t *board = calloc(1, sizeof(board_t));
+    init_board(board, 20, 10);
+    render_mino(piece_win, mino, '1');
     render_board(board, board_win);
-    render_mino(board_win, mino, '1');
+
+    wnoutrefresh(piece_win);
+    wnoutrefresh(board_win);
+    doupdate();
+    char input;
 
     while (g_hatersgonnahate) {
         if (g_gravity_timer < 0) {    
             g_gravity_timer = 500;
-            render_mino(board_win, mino, '0');
             resolve_mino_motion(board, mino, GRAVITY);
-            render_mino(board_win, mino, '1');
+            render_mino(piece_win, mino, '1');
+            wnoutrefresh(piece_win);
+            wnoutrefresh(board_win);
         }
-        switch (getch()) {
-            case 'r':
-                render_mino(board_win, mino, '0');
-                rotate_mino(mino, 1);
-                render_mino(board_win, mino, '1');
+        input = getch();
+        switch (input) {
+            case 'r':                          
+                resolve_mino_motion(board, mino, ROTATE_CCW);
+                render_mino(piece_win, mino, '1');
+                wnoutrefresh(piece_win);
                 break;
-            case 's':
-                render_mino(board_win, mino, '0');
-                rotate_mino(mino, -1);
-                render_mino(board_win, mino, '1');
+            case 's':                           
+                resolve_mino_motion(board, mino, ROTATE_CW);
+                render_mino(piece_win, mino, '1');
+                wnoutrefresh(piece_win);
                 break;
-            case 't':
-                render_mino(board_win, mino, '0');
-                rotate_mino(mino, 2);
-                render_mino(board_win, mino, '1');
+            case 't':                            
+                resolve_mino_motion(board, mino, ROTATE_180);
+                render_mino(piece_win, mino, '1');
+                wnoutrefresh(piece_win);
                 break;
-            case 'n':
-                render_mino(board_win, mino, '0');
-                mino->x--;
-                render_mino(board_win, mino, '1');
+            case 'n':                             
+                resolve_mino_motion(board, mino, MOVE_LEFT);
+                render_mino(piece_win, mino, '1');
+                wnoutrefresh(piece_win);
                 break;
             case 'i':
-                render_mino(board_win, mino, '0');
-                mino->x++;
-                render_mino(board_win, mino, '1');
+                resolve_mino_motion(board, mino, MOVE_RIGHT);
+                render_mino(piece_win, mino, '1');
+                wnoutrefresh(piece_win);
+                break;
+            case ' ':
+                resolve_mino_motion(board, mino, HARD_DROP);
+                render_mino(piece_win, mino, '1');
+                render_board(board, board_win);
+                wnoutrefresh(piece_win);
+                wnoutrefresh(board_win);
+                break;
+            case 'e':
+                if (resolve_mino_motion(board, mino, SOFT_DROP) == 3) {
+                    wnoutrefresh(board_win);
+                }
+                render_mino(piece_win, mino, '1');
+                wnoutrefresh(piece_win);
                 break;
             case 'q':
                 delwin(board_win);
+                delwin(piece_win);
                 endwin();
                 printf("\n");
                 printf("\n");
@@ -94,10 +129,10 @@ int main(){
                 free(board);
                 return 0;
         }
-    debug_display(mino, g_debug_verbosity);
-    g_gravity_timer -= 50;
-    wrefresh(board_win);
-    napms(33);
+        debug_display(mino, board, g_debug_verbosity);
+        g_gravity_timer -= 10;
+        doupdate();
+        napms(20);
     }
 }
 

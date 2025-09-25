@@ -56,7 +56,7 @@ void render_mino(WINDOW *window, mino_t *mino, char ch);
 void rotate_mino(mino_t *mino, rot_t rot);
 mino_t *make_mino(shape_t type);
 void rotate_vector(vec_t *v, rot_t rot);
-void resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion);
+int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion);
 
-void debug_display(mino_t *mino, char verbosity);
+void debug_display(mino_t *mino, board_t *board, char verbosity);
 void test_minos();

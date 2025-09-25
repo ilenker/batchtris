@@ -81,53 +81,120 @@ mino_t *make_mino(shape_t type) {
     return new_mino;
 }
 
-void resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
+// 0 = Motion success, boardstate unchanged 
+// 1 = Motion failed, boardstate unchanged
+// 2 = Motion success, boardstate changed
+// 3 = Motion failed, boardstate changed
+int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
     switch (motion) {
         case GRAVITY:       
-            if (mino->y > board->render_limit) {
+            if (mino->y+4 < board->render_limit) {
                 mino->y++;
                 mino->falling = true;
-                return;
+                return 0;
             }
-            if (board->grid[mino->y + 1][mino->x] != 9) {
+            if (mino->y + 1 > board->depth ||
+                board->grid[mino->y + 1][mino->x] != 9) {
                 mino->falling = false;
-                return;
+                return 3;
             }
             for (char i = 0; i < 3; i++) {
-                if (board->grid[mino->y + mino->v[i].dy + 1]
-                               [mino->x + mino->v[i].dx    ] != 9) {
+                char y_check = mino->y + mino->v[i].dy + 1;
+                char x_check = mino->x + mino->v[i].dx;    
+                if (y_check > board->depth || board->grid[y_check][x_check] != 9) {
                     mino->falling = false;
-                    return;
+                    return 3;
                 }
             }
             mino->y++;
-            mino->falling = true;
-            return;
+            return 0;
         case MOVE_LEFT:
-            // TODO
-            break;
+            if (mino->x - 1 < 0 || board->grid[mino->y][mino->x - 1] != 9) {
+                return 1;
+            }
+            for (char i = 0; i < 3; i++) {
+                char y_check = mino->y + mino->v[i].dy;
+                char x_check = mino->x + mino->v[i].dx - 1;    
+                if (x_check < 0 || board->grid[y_check][x_check] != 9) {
+                    return 1;
+                }
+            }
+            mino->x--;
+            return 0;
         case MOVE_RIGHT:
-            // TODO
-            break;
+            if (mino->x + 1 >= board->width || board->grid[mino->y][mino->x + 1] != 9) {
+                return 1;
+            }
+            for (char i = 0; i < 3; i++) {
+                char y_check = mino->y + mino->v[i].dy;
+                char x_check = mino->x + mino->v[i].dx + 1;    
+                if (x_check >= board->width || board->grid[y_check][x_check] != 9) {
+                    return 1;
+                }
+            }
+            mino->x++;
+            return 0;
         case ROTATE_CW:
-            // TODO
-            break;
+            rotate_mino(mino, r270);
+            for (char i = 0; i < 3; i++) {
+                char y_check = mino->y + mino->v[i].dy;
+                char x_check = mino->x + mino->v[i].dx;    
+                if (board->grid[y_check][x_check] != 9) {
+                    rotate_mino(mino, r90);
+                    return 1;
+                }
+            }
+            return 0;
         case ROTATE_CCW:
-            // TODO
-            break;
+            rotate_mino(mino, r90);
+            for (char i = 0; i < 3; i++) {
+                char y_check = mino->y + mino->v[i].dy;
+                char x_check = mino->x + mino->v[i].dx;    
+                if (board->grid[y_check][x_check] != 9) {
+                    rotate_mino(mino, r270);
+                    return 1;
+                }
+            }
+            return 0;
         case ROTATE_180:
-            // TODO
-            break;
+            rotate_mino(mino, r180);
+            for (char i = 0; i < 3; i++) {
+                char y_check = mino->y + mino->v[i].dy;
+                char x_check = mino->x + mino->v[i].dx;    
+                if (board->grid[y_check][x_check] != 9) {
+                    rotate_mino(mino, r180);
+                    return 1;
+                }
+            }
+            return 0;
         case HARD_DROP:
-            // TODO
-            break;
+            // TODO dont remove todo until done, this is just testing board population logic
+                                    // For each mino v[], go to corresponding board
+                                    // grid and set it's value to the mino->type
+            while (mino->falling) {
+                resolve_mino_motion(board, mino, GRAVITY);
+            }
+            char new_limit = board->render_limit; 
+            board->grid[mino->y][mino->x] = mino->type;
+            for (char i = 0; i < 3; i++) {
+                char y_check = mino->y + mino->v[i].dy;
+                char x_check = mino->x + mino->v[i].dx;    
+                board->grid[y_check][x_check] = mino->type;
+                if (y_check < new_limit) {
+                    printf("y_check:\t%d\n", y_check);
+                    new_limit = y_check;
+                }
+            }
+            board->render_limit = new_limit;
+            free(mino);
+            mino = make_mino((rand() % 7) + 1);
+            return 2;
         case SOFT_DROP:   
-            // TODO
-            break;
+            return resolve_mino_motion(board, mino, GRAVITY);
     }
 }
 
-void debug_display(mino_t *mino, char verbosity) {
+void debug_display(mino_t *mino, board_t *board, char verbosity) {
     if (verbosity == 0) {
         return;
     }
@@ -141,7 +208,8 @@ void debug_display(mino_t *mino, char verbosity) {
             mvprintw(7, 3, "[2]y: %d ", mino->v[2].dy);
             mvprintw(7, 11, "| [2]x: %d ", mino->v[2].dx);
         case 1:
-            mvprintw(1, 3, "type: %d ", mino->type);
+            //mvprintw(1, 3, "type: %d ", mino->type);
+            mvprintw(1, 3, "limit: %d ", board->render_limit);
             mvprintw(2, 3, "dir: %d ", mino->dir);
             mvprintw(3, 3, "y: %d ", mino->y);
             mvprintw(3, 11, "| x: %d ", mino->x);
@@ -236,7 +304,7 @@ void rotate_vector_BKP(vec_t *v, char dir) {
             v->dy = -1 * (v->dx * 1) + (v->dy * 0);
             v->dx = (v->dx * 0) + (v->dy * 1);
             break;
-        case 1:
+       case 1:
             v->dy = -1 * (v->dx * -1) + (v->dy * 0);
             v->dx = (v->dx * 0) + (v->dy * -1);
             break;
