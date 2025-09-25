@@ -1,5 +1,6 @@
 #pragma once
 
+#include "boardfunc.h"
 #include <ncurses.h>
 #include <stdlib.h>
 
@@ -8,11 +9,22 @@ typedef enum GlobalGameState {
     INPUT_MOVES,
     EXECUTE_MOVES,
     RESULTS,
-} globalstate_t;
+} g_state_t;
+
+typedef enum MinoMotion {
+    GRAVITY,
+    MOVE_LEFT,
+    MOVE_RIGHT,
+    ROTATE_CW,
+    ROTATE_CCW,
+    ROTATE_180,
+    HARD_DROP,
+    SOFT_DROP
+} motion_t;
 
 typedef enum Rotation {
-    rCW = -1,
-    rCCW = 1,
+    r270 = -1,
+    r90 = 1,
     r180 = 2,
 } rot_t;
 
@@ -32,16 +44,19 @@ typedef struct Vector {
 } vec_t;
 
 typedef struct Mino {
-    vec_t v[3];
-    char y;
-    char x;
-    unsigned char rot;
-    shape_t type;
+    vec_t v[3];             // 6
+    shape_t type;           // 4
+    char y;                 // 1
+    char x;                 // 1
+    unsigned char dir;      // 1
+    bool falling;
 } mino_t;
 
-void render_mino(mino_t *mino, char ch);
+void render_mino(WINDOW *window, mino_t *mino, char ch);
 void rotate_mino(mino_t *mino, rot_t rot);
 mino_t *make_mino(shape_t type);
-void test_minos();
 void rotate_vector(vec_t *v, rot_t rot);
+void resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion);
+
 void debug_display(mino_t *mino, char verbosity);
+void test_minos();

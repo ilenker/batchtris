@@ -3,22 +3,25 @@
 #include <unistd.h>
 #include <ncurses.h>
 #include "minofunc.h"
+#include "boardfunc.h"
 
-bool hatersgonnahate = true;
+bool g_hatersgonnahate = true;
 char COLOR_ORANGE = 9;
 char COLOR_PURPLE = 10;
+char g_debug_verbosity = 1;
+int g_gravity_timer = 500;
+
 
 int main(){
     initscr();
     cbreak();
     noecho();
-    scrollok(stdscr, TRUE);
-    //nodelay(stdscr, TRUE);
+    scrollok(stdscr, FALSE);
+    nodelay(stdscr, TRUE);
 
     start_color();
     init_color(COLOR_ORANGE, 929, 500, 100);
     init_color(COLOR_PURPLE, 650, 20, 900);
-
     init_pair(1, COLOR_CYAN, COLOR_CYAN);       // I
     init_pair(2, COLOR_YELLOW, COLOR_YELLOW);  //  O 
     init_pair(3, COLOR_BLUE, COLOR_BLUE);       // J
@@ -29,42 +32,72 @@ int main(){
     init_pair(8, COLOR_BLACK, COLOR_BLACK);    //  Blank 
     init_pair(9, COLOR_WHITE, COLOR_BLACK);    //  Text 
                                    
-    mino_t *mino = make_mino(I);
-    render_mino(mino, '1');
+    mino_t *mino = make_mino(T);
+    board_t *board = calloc(1, sizeof(board_t));
 
-    while (hatersgonnahate) {
+    init_board(board, 20, 10);
+
+    WINDOW *board_win = newwin(20, 20, 6, 3);
+    scrollok(board_win, FALSE);
+    nodelay(board_win, TRUE);
+    render_board(board, board_win);
+    render_mino(board_win, mino, '1');
+
+    while (g_hatersgonnahate) {
+        if (g_gravity_timer < 0) {    
+            g_gravity_timer = 500;
+            render_mino(board_win, mino, '0');
+            resolve_mino_motion(board, mino, GRAVITY);
+            render_mino(board_win, mino, '1');
+        }
         switch (getch()) {
             case 'r':
-                render_mino(mino, '0');
+                render_mino(board_win, mino, '0');
                 rotate_mino(mino, 1);
-                render_mino(mino, '1');
+                render_mino(board_win, mino, '1');
                 break;
             case 's':
-                render_mino(mino, '0');
+                render_mino(board_win, mino, '0');
                 rotate_mino(mino, -1);
-                render_mino(mino, '1');
+                render_mino(board_win, mino, '1');
                 break;
             case 't':
-                render_mino(mino, '0');
+                render_mino(board_win, mino, '0');
                 rotate_mino(mino, 2);
-                render_mino(mino, '1');
+                render_mino(board_win, mino, '1');
                 break;
             case 'n':
-                render_mino(mino, '0');
+                render_mino(board_win, mino, '0');
                 mino->x--;
-                render_mino(mino, '1');
+                render_mino(board_win, mino, '1');
                 break;
             case 'i':
-                render_mino(mino, '0');
+                render_mino(board_win, mino, '0');
                 mino->x++;
-                render_mino(mino, '1');
+                render_mino(board_win, mino, '1');
                 break;
-            case 'c':
-                free(mino);
+            case 'q':
+                delwin(board_win);
                 endwin();
+                printf("\n");
+                printf("\n");
+                printf("---------------------------\n");
+                for (char y = 0; y < board->depth; y++) {
+                    for (char x = 0; x < board->width; x++) {
+                        printf("%d", board->grid[y][x]);
+                    } 
+                    printf("\n");
+                }
+                printf("board d: \t%d\n", board->depth);
+                printf("board w: \t%d\n", board->width);
+                free(mino);
+                free(board);
                 return 0;
         }
-    debug_display(mino, 1);
+    debug_display(mino, g_debug_verbosity);
+    g_gravity_timer -= 50;
+    wrefresh(board_win);
+    napms(33);
     }
 }
 
@@ -92,7 +125,7 @@ t
                c         c  O       cOOXO      c X       c     
                d         d  O       d          d O       d     
          dir:   right ->  down  ->   left  ->   up   ->   right
-origin delta:   0,0      0,+1        +1,0      0,-1       -1,0    
+origin delta:       0,+1        +1,0      0,-1       -1,0    
 
 Where to place blocks from origin?
    y x    y  x   y   x   y   x
