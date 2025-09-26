@@ -89,20 +89,16 @@ mino_t *make_mino(shape_t type) {
 int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
     switch (motion) {
         case GRAVITY:       
-            if (mino->y+4 < board->render_limit) {
-                mino->y++;
-                mino->falling = true;
-                return 0;
-            }
             if (mino->y + 1 > board->depth ||
-                board->grid[mino->y + 1][mino->x] != 9) {
+                get_board_data_yx(board, mino->y + 1, mino->x) != 9) {
                 mino->falling = false;
                 return 3;
             }
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy + 1;
                 int x_check = mino->x + mino->v[i].dx;    
-                if (y_check > board->depth || board->grid[y_check][x_check] != 9) {
+                int yx_check = get_board_data_yx(board, y_check, x_check);
+                if (y_check > board->depth || yx_check != 9) {
                     mino->falling = false;
                     return 3;
                 }
@@ -110,31 +106,32 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
             mino->y++;
             return 0;
         case MOVE_LEFT:
-            if (mino->x - 1 < 0 || board->grid[mino->y][mino->x - 1] != 9) {
+            if (mino->x - 1 < 0 || get_board_data_yx(board, mino->y, mino->x - 1) != 9) {
                 return 1;
             }
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx - 1;    
-                if (x_check < 0 || board->grid[y_check][x_check] != 9) {
+                if (x_check < 0 || get_board_data_yx(board, y_check, x_check)!= 9) {
                     return 1;
                 }
             }
             mino->x--;
             return 0;
         case MOVE_RIGHT:
-            if (mino->x + 1 >= board->width || board->grid[mino->y][mino->x + 1] != 9) {
+            if (mino->x + 1 >= board->width || get_board_data_yx(board, mino->y, mino->x + 1) != 9) {
                 return 1;
             }
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx + 1;    
-                if (x_check >= board->width || board->grid[y_check][x_check] != 9) {
+                if (x_check >= board->width || get_board_data_yx(board, y_check, x_check) != 9) {
                     return 1;
                 }
             }
             mino->x++;
             return 0;
+        // TODO: Rotation is bugged on JLI, and generally jank at borders
         case ROTATE_CW:
             rotate_mino(mino, r270);
             for (int i = 0; i < 3; i++) {
@@ -146,6 +143,7 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
                 }
             }
             return 0;
+        // TODO: Rotation is bugged on JLI, and generally jank at borders
         case ROTATE_CCW:
             rotate_mino(mino, r90);
             for (int i = 0; i < 3; i++) {
@@ -157,6 +155,7 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
                 }
             }
             return 0;
+        // TODO: Rotation is bugged on J, L, I, and all are janky at borders
         case ROTATE_180:
             rotate_mino(mino, r180);
             for (int i = 0; i < 3; i++) {
@@ -176,11 +175,11 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
             char new_limit = board->render_limit; 
             board->grid[mino->y][mino->x] = mino->type;
             board->row_counts[mino->y]++;
-            if (board->row_counts[mino->y] == 10) {
-            //    endwin();
-            //    printf("%d\n", process_rows(board, mino->y, PUSH));
-            //    napms(1000);
-                  process_rows(board, mino->y, PUSH);
+            if (board->row_counts[mino->y] == 10) {  // Row is full at xy
+                endwin();
+                printf("%d\n", mino->y);
+                napms(1000);
+                process_rows(board, mino->y, PUSH);
             }
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
@@ -188,10 +187,10 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
                 board->grid[y_check][x_check] = mino->type;
                 board->row_counts[y_check]++;
                 if (board->row_counts[y_check] == 10) {
-                  //  endwin();
-                  //  printf("%d\n", process_rows(board, y_check, PUSH));
-                  //  napms(1000);
-                      process_rows(board, y_check, PUSH);
+                    endwin();
+                    printf("%d\n", y_check);
+                    napms(1000);
+                    process_rows(board, y_check, PUSH);
                 }
                 if (y_check < new_limit) {
                     new_limit = y_check;
@@ -203,6 +202,7 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
             //napms(1000);
             board->render_limit = new_limit;
             free(mino);
+            // TODO: implement 7-bag
             mino = make_mino((rand() % 7) + 1);
             return 2;
         case SOFT_DROP:   
@@ -212,36 +212,6 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
     }
 }
 
-void debug_display(mino_t *mino, board_t *board, char verbosity) {
-    if (verbosity == 0) {
-        return;
-    }
-    attron(COLOR_PAIR(9));
-    switch (verbosity) {
-        case 3:
-            for (int i = 0; i < board->depth; i++) {
-                wattron(stdscr, COLOR_PAIR(9));
-                mvprintw(6 + i, 1, "%d", board->row_counts[i]);
-            }
-        break;
-        case 2:
-            mvprintw(1, 3, "[0]y: %d ", mino->v[0].dy);
-            mvprintw(1, 11, "| [0]x: %d ", mino->v[0].dx);
-            mvprintw(2, 3, "[1]y: %d ", mino->v[1].dy);
-            mvprintw(2, 11, "| [1]x: %d ", mino->v[1].dx);
-            mvprintw(3, 3, "[2]y: %d ", mino->v[2].dy);
-            mvprintw(3, 11, "| [2]x: %d ", mino->v[2].dx);
-        break;
-        case 1:
-            //mvprintw(1, 3, "type: %d ", mino->type);
-            mvprintw(1, 3, "limit: %d ", board->render_limit);
-            mvprintw(2, 3, "dir: %d ", mino->dir);
-            mvprintw(3, 3, "y: %d ", mino->y);
-            mvprintw(3, 11, "| x: %d ", mino->x);
-            mvprintw(4, 3, "falling: %d ", mino->falling);
-        break;
-    }
-}
 
 void render_mino(WINDOW * window, mino_t *mino, char ch) {
     char col = ch == '0' ? 8 : mino->type;
@@ -341,3 +311,33 @@ void rotate_vector_BKP(vec_t *v, char dir) {
     }
 }
 
+void debug_display(mino_t *mino, board_t *board, char verbosity) {
+    if (verbosity == 0) {
+        return;
+    }
+    attron(COLOR_PAIR(9));
+    switch (verbosity) {
+        case 3:
+            for (int i = 0; i < board->depth; i++) {
+                wattron(stdscr, COLOR_PAIR(9));
+                mvprintw(6 + i, 1, "%d", board->row_counts[i]);
+            }
+        break;
+        case 2:
+            mvprintw(1, 3, "[0]y: %d ", mino->v[0].dy);
+            mvprintw(1, 11, "| [0]x: %d ", mino->v[0].dx);
+            mvprintw(2, 3, "[1]y: %d ", mino->v[1].dy);
+            mvprintw(2, 11, "| [1]x: %d ", mino->v[1].dx);
+            mvprintw(3, 3, "[2]y: %d ", mino->v[2].dy);
+            mvprintw(3, 11, "| [2]x: %d ", mino->v[2].dx);
+        break;
+        case 1:
+            //mvprintw(1, 3, "type: %d ", mino->type);
+            mvprintw(1, 3, "limit: %d ", board->render_limit);
+            mvprintw(2, 3, "dir: %d ", mino->dir);
+            mvprintw(3, 3, "y: %d ", mino->y);
+            mvprintw(3, 11, "| x: %d ", mino->x);
+            mvprintw(4, 3, "falling: %d ", mino->falling);
+        break;
+    }
+}
