@@ -13,7 +13,6 @@ char COLOR_GREY = 11;
 char g_debug_verbosity = 3;
 int g_gravity_timer = 500;
 
-
 int main() {
     initscr();
     cbreak();

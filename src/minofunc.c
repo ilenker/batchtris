@@ -177,10 +177,10 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
             board->grid[mino->y][mino->x] = mino->type;
             board->row_counts[mino->y]++;
             if (board->row_counts[mino->y] == 10) {
-                endwin();
-                printf("%d\n", process_rows(board, mino->y, PUSH));
-                napms(1000);
-             //   process_rows(board, mino->y, PUSH);
+            //    endwin();
+            //    printf("%d\n", process_rows(board, mino->y, PUSH));
+            //    napms(1000);
+                  process_rows(board, mino->y, PUSH);
             }
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
@@ -188,18 +188,19 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
                 board->grid[y_check][x_check] = mino->type;
                 board->row_counts[y_check]++;
                 if (board->row_counts[y_check] == 10) {
-                    endwin();
-                    printf("%d\n", process_rows(board, y_check, PUSH));
-                    napms(1000);
-            //        process_rows(board, y_check, PUSH);
+                  //  endwin();
+                  //  printf("%d\n", process_rows(board, y_check, PUSH));
+                  //  napms(1000);
+                      process_rows(board, y_check, PUSH);
                 }
                 if (y_check < new_limit) {
                     new_limit = y_check;
                 }
             }
-            endwin();
-            printf("%d\n", process_rows(board, 0, CLEAR));
-            napms(1000);
+            //endwin();
+            //printf("%d\n", process_rows(board, 0, CLEAR));
+            process_rows(board, 0, CLEAR);
+            //napms(1000);
             board->render_limit = new_limit;
             free(mino);
             mino = make_mino((rand() % 7) + 1);

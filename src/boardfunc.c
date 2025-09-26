@@ -16,10 +16,12 @@ void init_board(board_t *board, char depth, char width) {
 void render_board(board_t *board, WINDOW *window) {
     for (int y = board->render_limit; y < board->depth; y++) {
         for (int x = 0; x < board->width; x++) {
-            char col = board->grid[board->render_limit + board->depth - 1 - y][x];
+            //char col = board->grid[board->render_limit + board->depth - 1 - y][x];
+            char col = board->grid[y][x];
             if (col != 9) {
                 wattron(window, COLOR_PAIR(col));
-                mvwaddch(window, board->render_limit + (board->depth - 1 - y), x * 2, 'x'); 
+                //mvwaddch(window, board->render_limit + (board->depth - 1 - y), x * 2, 'x'); 
+                mvwaddch(window, y, x * 2, 'x'); 
                 waddch(window, 'x'); 
             }
         } 
