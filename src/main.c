@@ -38,7 +38,7 @@ int main() {
     init_pair(10, COLOR_ORANGE, COLOR_GREY);// Text 
     wbkgd(stdscr, COLOR_PAIR(10));
 
-    WINDOW *board_win = newwin(20, 20, 6, 3);  // window for the board itself
+    WINDOW *board_win = newwin(20, 20, 6, 6);  // window for the board itself
     scrollok(board_win, FALSE);
     leaveok(board_win, TRUE);
     nodelay(board_win, TRUE);
@@ -48,13 +48,25 @@ int main() {
 
     mino_t *mino = make_mino(T);
     board_t *board = calloc(1, sizeof(board_t));
+    board->parent_window = board_win;
     init_board_sll(board, 20, 10);
     init_board(board, 20, 10);
     render_mino(board_win, mino, '1');
     render_board(board, board_win);
 
+    row_t *current_row;
+    yield_next_row(NULL, 1);
+    for (int y = 0; y < 20; y++) {
+        current_row = yield_next_row(board->head, 0); 
+        if (current_row == NULL) {
+            break;
+        } 
+        current_row->count = 0;
+    }
+    yield_next_row(NULL, 1);
+
  //   endwin();
-    printf("\n============TESTIN'=================\n");
+   // printf("\n============TESTIN'=================\n");
 /*
     // Single full row move to tail
       row_t *pre_full_row = row_at_index(board, 15-1); 
@@ -132,13 +144,13 @@ int main() {
                 render_mino(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
-            case 'n':                             
+            case 'h':                             
                 render_mino(board_win, mino, '0');
                 resolve_mino_motion(board, mino, MOVE_LEFT);
                 render_mino(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
-            case 'i':
+            case ':':
                 render_mino(board_win, mino, '0');
                 resolve_mino_motion(board, mino, MOVE_RIGHT);
                 render_mino(board_win, mino, '1');
@@ -148,10 +160,9 @@ int main() {
                 render_mino(board_win, mino, '0');
                 resolve_mino_motion(board, mino, HARD_DROP);
                 render_mino(board_win, mino, '1');
-                render_board(board, board_win);
                 wnoutrefresh(board_win);
                 break;
-            case 'e':
+            case 'z':
                 render_mino(board_win, mino, '0');
                 if (resolve_mino_motion(board, mino, SOFT_DROP) == 3) {
                     wnoutrefresh(board_win);

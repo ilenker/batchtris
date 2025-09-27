@@ -1,31 +1,179 @@
 #include <ncurses.h>
 #include "boardfunc.h"
+#include "minofunc.h"
+
+#define __break //{wclear(board->parent_window); render_board(board, board->parent_window); nodelay(board->parent_window, FALSE); 
+
+#define point__ //refresh(); doupdate(); wgetch(board->parent_window); nodelay(board->parent_window, TRUE);}
 
 
 int get_board_data_yx(board_t *board, int y, int x) {
-    row_t *row;
-    row = row_at_index(board, y);
-    return row->data[x];
+    row_t *current = board->head; // I justify this with: we accessed the first
+    y--;                         // index by getting the head, if i is now -1, just return
+    while(y >= 0) {
+        current = current->next;
+        y--;
+        if (current == NULL) {
+            return -1;
+        }
+    }
+    return current->data[x];
+}
+
+void render_board(board_t *board, WINDOW *window) {
+    row_t *current_row;
+    char col;
+    yield_next_row(NULL, 1);
+    for (int y = 0; y < 20; y++) {
+        current_row = yield_next_row(board->head, 0); 
+        if (current_row == NULL) {break;} // sll iteration
+        for (int x = 0; x < 10; x++) {
+            if (current_row != NULL) {
+                col = current_row->data[x];
+                if (col != 9) {
+                    wattron(window, COLOR_PAIR(col));
+                    mvwaddch(window, y, x * 2, 'x'); 
+                    waddch(window, 'x'); 
+                }
+            }
+        }
+    }
+}
+
+int process_rows(board_t *board, int row, stackop_t operation) {
+    static int stack[4];  
+    static int ptr = 0;
+    static int min = 69;
+              //mvaddstr(14, 30, "...............................");
+              //mvaddstr(15, 30, "...............................");
+              //mvaddstr(16, 30, "...............................");
+              //mvaddstr(17, 30, "...............................");
+              //mvaddstr(18, 30, "...............................");
+              //mvaddstr(19, 30, "...............................");
+              //mvaddstr(20, 30, "...............................");
+              //mvaddstr(21, 30, "...............................");
+              //mvaddstr(22, 30, "...............................");
+
+              //__break
+              //char *op;
+              //if (operation == PUSH) {op = "PUSH";}
+              //if (operation == POP) {op = "POP";}
+              //if (operation == PEEK) {op = "PEEK";}
+              //if (operation == CLEAR) {op = "CLEAR";}
+           //   mvprintw(14, 30, "process_rows(row = %d, op=%s)", row, op);
+           //   mvprintw(15, 30, "ptr : %d", ptr);
+           //   mvprintw(16, 30, "<proceed?>");
+              //point__
+              //mvprintw(16, 30, "_____________________________");
+    switch (operation) {
+        case POP:
+            ptr--;
+            return ptr;
+            break;
+        case PUSH:
+            // For first push, just do it.           
+            // For 2, if greater than top, push      
+            //        else insert below               
+            // For 3... you know what. I'm just going
+            // to do head each one. Only if it's a 4-
+            // clear we do the efficient way. T-spins
+            // will be assumed contiguous, so we will
+            // implement that if we get there.(^=_=^)
+            stack[ptr] = row;
+       //       __break
+       //       mvprintw(17, 30, "set stack[ptr:%d] = %2d (row)", ptr, row);
+       //       mvprintw(18, 30, "<proceed?>");
+       //       point__
+       //       mvprintw(18, 30, "_____________________________");
+            ptr++;
+            if (row < min) {
+                min = row;
+            }
+            return ptr;
+            break;
+        case PEEK:
+            return ptr;
+            break;
+        case CLEAR:
+            if (ptr == 4) {
+                clear_rows(board, min, 4); 
+                ptr = 0;
+                min = 69;
+                return ptr;
+                break;
+            }
+            if (ptr > 0) {
+                while (ptr > 0) { 
+                    ptr--; 
+       //           __break
+       //           mvprintw(19, 30, "___________loopin..._________");
+       //           mvprintw(20, 30, "stack[ptr:%d]: [%2d]", ptr, stack[ptr]);
+       //           mvprintw(21, 30, "clear_rows(%2d, 1)", stack[ptr]);
+       //           mvprintw(22, 30, "          <proceed>          ");
+       //           point__
+                    clear_rows(board, stack[ptr], 1);
+                    if (stack[ptr] > stack[ptr - 1]) {
+                        stack[ptr - 1]++; 
+                    }
+                    /* when we clear rows one-by-one, the stack of row indices
+                       remained the same throughout the process. So as each row 
+                       cleared and the rows above dropped down, the row indices
+                       become stale if they happened to point to a row above a
+                       cleared row. To fix, we check if the next row index is
+                       smaller than the one we just cleared. If so, increment
+                       the next row index in the stack.
+                      */
+                    stack[ptr] = -2;
+                }
+                ptr = 0;
+                min = 69;
+                return ptr;
+                break;
+            } else {
+                ptr = 0;
+                min = 69;
+                return ptr;
+                break;
+            }
+            return ptr;
+    }
 }
 
 void clear_rows(board_t *board, int fullrow, int count) {
-    // Single full row move to tail
     row_t *pre_gap = row_at_index(board, fullrow - 1); 
-    row_t *full_row = pre_gap->next;
-    row_t *post_gap;
-    post_gap = full_row;
+    row_t *first_full_row = pre_gap->next;
+    row_t *last_full_row;
+
+                mvprintw(0, 0, "clear_rows called on [%d]", fullrow);
+    last_full_row = first_full_row;
+    for (int i = 0; i < 10; i++) {
+                __break
+                mvprintw(1, 0, "first_full_row->data[%d] = %d", i, last_full_row->data[i]);
+                point__
+        first_full_row->data[i] = 9;     // reset row data
+    }
+    last_full_row->count = 0;
     while (count > 1) {
-        post_gap = post_gap->next;
+        last_full_row = last_full_row->next;
+                mvprintw(0, 0, "clear_rows called on [%d]->next", fullrow);
+        for (int i = 0; i < 10; i++) {
+                __break
+                mvprintw(1, 0, "last_full_row->data[%d] = %d", i, last_full_row->data[i]);
+                point__
+            last_full_row->data[i] = 9; 
+        }
+        last_full_row->count = 0;
         count--;
     }
-    pre_gap->next = post_gap->next;
-    post_gap->next = board->head;
-    board->head = full_row;
+                wclear(board->parent_window);
+    pre_gap->next = last_full_row->next;
+    last_full_row->next = board->head;
+    board->head = first_full_row;
 }
 
 row_t *row_at_index(board_t *board, int i) {
-    row_t *current = board->head;
-    i--;
+    row_t *current = board->head; // I justify this with: we accessed the first
+    i--;                         // index by getting the head, if i is now -1, just return
     while(i >= 0) {
         current = current->next;
         i--;
@@ -73,9 +221,9 @@ void init_board(board_t *board, char depth, char width) {
     }
     for (int y = 0; y < board->depth; y++) {
         board->row_counts[y] = 0;
-        for (int x = 0; x < board->width; x++) {
-    //     board->NOGREP[board->depth - 1 - y][x] = 9;
-        } 
+      //  for (int x = 0; x < board->width; x++) {
+      //   board->NOGREP[board->depth - 1 - y][x] = 9;
+      //  } 
     }
 }
 
@@ -150,63 +298,3 @@ void init_board_sll(board_t *board, char depth, char width) {
 // Reverse a List
 //:'t+1,.g/^/m 't
 
-
-void render_board(board_t *board, WINDOW *window) {
-    row_t *current_row;
-    char col;
-    yield_next_row(NULL, 1);
-    for (int y = 0; y < 20; y++) {
-        current_row = yield_next_row(board->head, 0); 
-        if (current_row == NULL) {break;} // sll iteration
-        for (int x = 0; x < 10; x++) {
-            if (current_row != NULL) {
-                col = current_row->data[x];
-                if (col != 9) {
-                    wattron(window, COLOR_PAIR(col));
-                    mvwaddch(window, y, x * 2, 'x'); 
-                    waddch(window, 'x'); 
-                }
-            }
-        }
-    }
-}
-
-int process_rows(board_t *board, int row, stackop_t operation) {
-    static int stack[4];  
-    static int ptr = 0;
-    static int min = 69;
-
-    switch (operation) {
-        case PUSH:
-            // For first push, just do it.           
-            // For 2, if greater than top, push      
-            //        else insert below               
-            // For 3... you know what. I'm just going
-            // to do head each one. Only if it's a 4-
-            // clear we do the efficient way. T-spins
-            // will be assumed contiguous, so we will
-            // implement that if we get there.(^=_=^)
-            stack[ptr] = row;
-            ptr++;
-            min = row<min?row:min;  /* roamin */
-            return ptr;
-        case POP:
-            return ptr;
-        case CLEAR:
-            if (ptr == 4) {
-                clear_rows(board, min, 4); 
-                return ptr;
-            }
-            if (ptr != 0) {
-                while (ptr >= 0) { 
-                    board->row_counts[stack[ptr]] = 0;
-                    stack[ptr] = -1;
-                    ptr--; 
-                }
-                ptr = 0;
-                min = 69;
-            }
-            return ptr;
-            break;
-    }
-}

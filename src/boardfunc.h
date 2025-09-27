@@ -8,21 +8,24 @@ typedef struct Row row_t;
 typedef enum StackOperation {
     PUSH,
     POP,
+    PEEK,
     CLEAR,
 } stackop_t;
 
 typedef struct Board {
+    row_t *head;
     char render_limit;
     char depth;
     char width;
-    row_t *head;
     char grid[20][10]; 
     char row_counts[20];
+    WINDOW *parent_window;
 } board_t;
 
 typedef struct Row {
-    char data[10];
     row_t *next;
+    char data[10];
+    int count;
 } row_t;
 
 void init_board(board_t *board, char depth, char width);

@@ -3,6 +3,10 @@
 #include "minofunc.h"
 #include "boardfunc.h"
 
+#define __break //{wclear(board->parent_window); render_board(board, board->parent_window); nodelay(board->parent_window, FALSE); 
+
+#define point__ //refresh(); doupdate(); wgetch(board->parent_window); nodelay(board->parent_window, TRUE);}
+
 const vec_t g_irotation_lut[4] = {
     {0 , 1},
     {1 , 0},
@@ -134,10 +138,11 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
         // TODO: Rotation is bugged on JLI, and generally jank at borders
         case ROTATE_CW:
             rotate_mino(mino, r270);
+            // I see, need to check the origin as well i.e. just (mino->y, mino->x)
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx;    
-                if (board->grid[y_check][x_check] != 9) {
+                if (get_board_data_yx(board, y_check, x_check) != 9) {
                     rotate_mino(mino, r90);
                     return 1;
                 }
@@ -149,7 +154,7 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx;    
-                if (board->grid[y_check][x_check] != 9) {
+                if (get_board_data_yx(board, y_check, x_check) != 9) {
                     rotate_mino(mino, r270);
                     return 1;
                 }
@@ -161,7 +166,7 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx;    
-                if (board->grid[y_check][x_check] != 9) {
+                if (get_board_data_yx(board, y_check, x_check) != 9) {
                     rotate_mino(mino, r180);
                     return 1;
                 }
@@ -171,34 +176,54 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
             // TODO dont remove todo until done, this is just testing board population logic
                                     // For each mino v[], go to corresponding board
                                     // grid and set it's value to the mino->type
-            while (resolve_mino_motion(board, mino, GRAVITY) != 3){}
+            while (resolve_mino_motion(board, mino, GRAVITY) != 3){} // Fall till obstacle
+            
             char new_limit = board->render_limit; 
-            board->grid[mino->y][mino->x] = mino->type;
-            board->row_counts[mino->y]++;
-            if (board->row_counts[mino->y] == 10) {  // Row is full at xy
-                endwin();
-                printf("%d\n", mino->y);
-                napms(1000);
-                process_rows(board, mino->y, PUSH);
+
+                          /* ===Mino origin=== */
+            row_t *current_row = row_at_index(board, mino->y);
+            current_row->data[mino->x] = mino->type;
+            current_row->count++;
+
+                            move(1, 30); clrtoeol();
+                            move(2, 30); clrtoeol();
+                            move(3, 30); clrtoeol();
+                            move(4, 30); clrtoeol();
+            if (current_row->count == 10) {  // Row is full at xy
+                process_rows(board, mino->y, PUSH); // ptr = 1
+     //                     __break
+     //                     mvprintw(1, 30, "mino->y : %d", mino->y);
+     //                     point__
             }
+
+            /* ===Mino's 3x components=== */
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx;    
-                board->grid[y_check][x_check] = mino->type;
-                board->row_counts[y_check]++;
-                if (board->row_counts[y_check] == 10) {
-                    endwin();
-                    printf("%d\n", y_check);
-                    napms(1000);
+                current_row = row_at_index(board, y_check);
+                current_row->data[x_check] = mino->type;
+                current_row->count++;
+
+                if (current_row->count == 10) {
                     process_rows(board, y_check, PUSH);
+     //                     __break
+     //                     mvprintw(2 + i, 30, "mino[%d]->y : %d", i, y_check);
+     //                     point__
                 }
+                //endwin();
+                //printf("%d\n", y_check);
+                //napms(1000);
                 if (y_check < new_limit) {
                     new_limit = y_check;
                 }
             }
+            if (process_rows(board, -1, PEEK) != 0) {
+                wclear(board->parent_window);
+                process_rows(board, -1, CLEAR);
+            }
+            render_board(board, board->parent_window);
             //endwin();
             //printf("%d\n", process_rows(board, 0, CLEAR));
-            process_rows(board, 0, CLEAR);
             //napms(1000);
             board->render_limit = new_limit;
             free(mino);
@@ -318,11 +343,18 @@ void debug_display(mino_t *mino, board_t *board, char verbosity) {
     attron(COLOR_PAIR(9));
     switch (verbosity) {
         case 3:
-            for (int i = 0; i < board->depth; i++) {
-                wattron(stdscr, COLOR_PAIR(9));
-                mvprintw(6 + i, 1, "%d", board->row_counts[i]);
+            wattron(stdscr, COLOR_PAIR(9));
+            yield_next_row(NULL, 1);
+            row_t *current_row;
+            for (int y = 0; y < 20; y++) {
+                current_row = yield_next_row(board->head, 0); 
+                if (current_row == NULL) {
+                    break;
+                } 
+                mvprintw(6 + y, 0, "%2d:%2d", y, current_row->count);
             }
-        break;
+            yield_next_row(NULL, 1);
+            break;
         case 2:
             mvprintw(1, 3, "[0]y: %d ", mino->v[0].dy);
             mvprintw(1, 11, "| [0]x: %d ", mino->v[0].dx);
