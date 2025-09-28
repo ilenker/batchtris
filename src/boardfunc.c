@@ -2,9 +2,9 @@
 #include "boardfunc.h"
 #include "minofunc.h"
 
-#define __break //{wclear(board->parent_window); render_board(board, board->parent_window); nodelay(board->parent_window, FALSE); 
+#define __break {wclear(board->parent_window); render_board(board, board->parent_window); nodelay(board->parent_window, FALSE); 
 
-#define point__ //refresh(); doupdate(); wgetch(board->parent_window); nodelay(board->parent_window, TRUE);}
+#define point__ refresh(); doupdate(); wgetch(board->parent_window); nodelay(board->parent_window, TRUE);}
 
 
 int get_board_data_yx(board_t *board, int y, int x) {
@@ -44,27 +44,29 @@ int process_rows(board_t *board, int row, stackop_t operation) {
     static int stack[4];  
     static int ptr = 0;
     static int min = 69;
-              //mvaddstr(14, 30, "...............................");
-              //mvaddstr(15, 30, "...............................");
-              //mvaddstr(16, 30, "...............................");
-              //mvaddstr(17, 30, "...............................");
-              //mvaddstr(18, 30, "...............................");
-              //mvaddstr(19, 30, "...............................");
-              //mvaddstr(20, 30, "...............................");
-              //mvaddstr(21, 30, "...............................");
-              //mvaddstr(22, 30, "...............................");
-
-              //__break
-              //char *op;
-              //if (operation == PUSH) {op = "PUSH";}
-              //if (operation == POP) {op = "POP";}
-              //if (operation == PEEK) {op = "PEEK";}
-              //if (operation == CLEAR) {op = "CLEAR";}
-           //   mvprintw(14, 30, "process_rows(row = %d, op=%s)", row, op);
-           //   mvprintw(15, 30, "ptr : %d", ptr);
-           //   mvprintw(16, 30, "<proceed?>");
-              //point__
-              //mvprintw(16, 30, "_____________________________");
+     /*
+                mvaddstr(14, 30, "...............................");        
+                mvaddstr(15, 30, "...............................");        
+                mvaddstr(16, 30, "...............................");        
+                mvaddstr(17, 30, "...............................");        
+                mvaddstr(18, 30, "...............................");        
+                mvaddstr(19, 30, "...............................");        
+                mvaddstr(20, 30, "...............................");        
+                mvaddstr(21, 30, "...............................");        
+                mvaddstr(22, 30, "...............................");        
+                                                                            
+              __break                                                       
+              char *op;                                                     
+              if (operation == PUSH) {op = "PUSH";}                         
+              if (operation == POP) {op = "POP";}                           
+              if (operation == PEEK) {op = "PEEK";}                         
+              if (operation == CLEAR) {op = "CLEAR";}                       
+              mvprintw(14, 30, "process_rows(row = %d, op=%s)", row, op);   
+              mvprintw(15, 30, "ptr : %d", ptr);                            
+              mvprintw(16, 30, "<proceed?>");                               
+              point__                                                       
+              mvprintw(16, 30, "_____________________________");          
+                                                                                  */
     switch (operation) {
         case POP:
             ptr--;
@@ -80,11 +82,11 @@ int process_rows(board_t *board, int row, stackop_t operation) {
             // will be assumed contiguous, so we will
             // implement that if we get there.(^=_=^)
             stack[ptr] = row;
-       //       __break
-       //       mvprintw(17, 30, "set stack[ptr:%d] = %2d (row)", ptr, row);
-       //       mvprintw(18, 30, "<proceed?>");
-       //       point__
-       //       mvprintw(18, 30, "_____________________________");
+  //            __break                                                     /*//*/
+  //            mvprintw(17, 30, "set stack[ptr:%d] = %2d (row)", ptr, row);  //
+  //            mvprintw(18, 30, "<proceed?>");                               //
+  //            point__                                                       //
+  //            mvprintw(18, 30, "_____________________________");            //
             ptr++;
             if (row < min) {
                 min = row;
@@ -97,32 +99,52 @@ int process_rows(board_t *board, int row, stackop_t operation) {
         case CLEAR:
             if (ptr == 4) {
                 clear_rows(board, min, 4); 
+                stack[0] = -2;
+                stack[1] = -2;
+                stack[2] = -2;
+                stack[3] = -2;
                 ptr = 0;
                 min = 69;
                 return ptr;
                 break;
             }
+            // Sort the stack x<y<z
+            if (stack[0] < stack[1]) {
+                stack[0] ^= stack[1];
+                stack[1] ^= stack[0];
+                stack[0] ^= stack[1];
+            }
+            if (stack[2] < stack[3]) {
+                stack[2] ^= stack[3];
+                stack[3] ^= stack[2];
+                stack[2] ^= stack[3];
+            }
+            if (stack[0] < stack[2]) {
+                stack[0] ^= stack[2];
+                stack[2] ^= stack[0];
+                stack[0] ^= stack[2];
+            }
+            if (stack[1] < stack[3]) {
+                stack[1] ^= stack[3];
+                stack[3] ^= stack[1];
+                stack[1] ^= stack[3];
+            }
+            if (stack[1] < stack[2]) {
+                stack[1] ^= stack[2];
+                stack[2] ^= stack[1];
+                stack[1] ^= stack[2];
+            }
+            
             if (ptr > 0) {
                 while (ptr > 0) { 
                     ptr--; 
-       //           __break
-       //           mvprintw(19, 30, "___________loopin..._________");
-       //           mvprintw(20, 30, "stack[ptr:%d]: [%2d]", ptr, stack[ptr]);
-       //           mvprintw(21, 30, "clear_rows(%2d, 1)", stack[ptr]);
-       //           mvprintw(22, 30, "          <proceed>          ");
-       //           point__
-                    clear_rows(board, stack[ptr], 1);
-                    if (stack[ptr] > stack[ptr - 1]) {
-                        stack[ptr - 1]++; 
-                    }
-                    /* when we clear rows one-by-one, the stack of row indices
-                       remained the same throughout the process. So as each row 
-                       cleared and the rows above dropped down, the row indices
-                       become stale if they happened to point to a row above a
-                       cleared row. To fix, we check if the next row index is
-                       smaller than the one we just cleared. If so, increment
-                       the next row index in the stack.
-                      */
+                //  __break                                                     /* // */
+                //  mvprintw(19, 30, "___________loopin..._________");             //
+                //  mvprintw(20, 30, "stack[ptr:%d]: [%2d]", ptr, stack[ptr]);     //
+                //  mvprintw(21, 30, "clear_rows(%2d, 1)", stack[ptr]);            //
+                //  mvprintw(22, 30, "          <proceed>          ");             //
+                //  point__                                                        //
+                    clear_rows(board, stack[ptr], 1);          
                     stack[ptr] = -2;
                 }
                 ptr = 0;
@@ -139,33 +161,33 @@ int process_rows(board_t *board, int row, stackop_t operation) {
     }
 }
 
-void clear_rows(board_t *board, int fullrow, int count) {
+void clear_rows(board_t *board, int fullrow, int n) {
     row_t *pre_gap = row_at_index(board, fullrow - 1); 
     row_t *first_full_row = pre_gap->next;
     row_t *last_full_row;
 
-//              mvprintw(0, 0, "clear_rows called on [%d]", fullrow);
+              mvprintw(0, 0, "clear_rows called on [%d]", fullrow);
     last_full_row = first_full_row;
     for (int i = 0; i < 10; i++) {
-//              __break
-//              mvprintw(1, 0, "first_full_row->data[%d] = %d", i, last_full_row->data[i]);
-//              point__
+           // __break
+           // mvprintw(1, 0, "first_full_row->data[%d] = %d", i, last_full_row->data[i]);
+           // point__
         first_full_row->data[i] = 9;     // reset row data
     }
     last_full_row->count = 0;
-    while (count > 1) {
+    while (n >= 2) {
         last_full_row = last_full_row->next;
                 mvprintw(0, 0, "clear_rows called on [%d]->next", fullrow);
         for (int i = 0; i < 10; i++) {
-//              __break
-//              mvprintw(1, 0, "last_full_row->data[%d] = %d", i, last_full_row->data[i]);
-//              point__
+           // __break
+           // mvprintw(1, 0, "last_full_row->data[%d] = %d", i, last_full_row->data[i]);
+           // point__
             last_full_row->data[i] = 9; 
         }
         last_full_row->count = 0;
-        count--;
+        n--;
     }
-//              wclear(board->parent_window);
+              wclear(board->parent_window);
     pre_gap->next = last_full_row->next;
     last_full_row->next = board->head;
     board->head = first_full_row;

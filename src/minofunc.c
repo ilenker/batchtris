@@ -3,9 +3,9 @@
 #include "minofunc.h"
 #include "boardfunc.h"
 
-#define __break //{wclear(board->parent_window); render_board(board, board->parent_window); nodelay(board->parent_window, FALSE); 
+#define __break {wclear(board->parent_window); render_board(board, board->parent_window); nodelay(board->parent_window, FALSE); 
 
-#define point__ //refresh(); doupdate(); wgetch(board->parent_window); nodelay(board->parent_window, TRUE);}
+#define point__ refresh(); doupdate(); wgetch(board->parent_window); nodelay(board->parent_window, TRUE);}
 
 const vec_t g_irotation_lut[4] = {
     {0 , 1},
@@ -185,15 +185,15 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
             current_row->data[mino->x] = mino->type;
             current_row->count++;
 
-                            move(1, 30); clrtoeol();
-                            move(2, 30); clrtoeol();
-                            move(3, 30); clrtoeol();
-                            move(4, 30); clrtoeol();
+   //                       move(1, 30); clrtoeol();
+   //                       move(2, 30); clrtoeol();
+   //                       move(3, 30); clrtoeol();
+   //                       move(4, 30); clrtoeol();
             if (current_row->count == 10) {  // Row is full at xy
                 process_rows(board, mino->y, PUSH); // ptr = 1
-     //                     __break
-     //                     mvprintw(1, 30, "mino->y : %d", mino->y);
-     //                     point__
+//                        __break
+//                        mvprintw(1, 30, "mino->y : %d", mino->y);
+//                        point__
             }
 
             /* ===Mino's 3x components=== */
@@ -206,13 +206,10 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
 
                 if (current_row->count == 10) {
                     process_rows(board, y_check, PUSH);
-     //                     __break
-     //                     mvprintw(2 + i, 30, "mino[%d]->y : %d", i, y_check);
-     //                     point__
+   //                       __break
+   //                       mvprintw(2 + i, 30, "mino[%d]->y : %d", i, y_check);
+   //                       point__
                 }
-                //endwin();
-                //printf("%d\n", y_check);
-                //napms(1000);
                 if (y_check < new_limit) {
                     new_limit = y_check;
                 }
@@ -222,9 +219,6 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
                 process_rows(board, -1, CLEAR);
             }
             render_board(board, board->parent_window);
-            //endwin();
-            //printf("%d\n", process_rows(board, 0, CLEAR));
-            //napms(1000);
             board->render_limit = new_limit;
             free(mino);
             // TODO: implement 7-bag
