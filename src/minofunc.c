@@ -14,6 +14,73 @@ const vec_t g_irotation_lut[4] = {
     {-1, 0}
 };
 
+
+void set_mino(mino_t *new_mino, shape_t type) {
+    new_mino->type = type;
+    new_mino->dir = 0;
+    new_mino->y = 2;
+    new_mino->x = 4;
+    new_mino->falling = true;
+    switch (type) {
+        case I:
+            new_mino->v[0].dy = 0; 
+            new_mino->v[0].dx = -1; 
+            new_mino->v[1].dy = 0;          
+            new_mino->v[1].dx = 1;       // oxoo
+            new_mino->v[2].dy = 0; 
+            new_mino->v[2].dx = 2; 
+            break;
+        case O:
+            new_mino->v[0].dy = -1;      //  oo 
+            new_mino->v[0].dx = 0;      //   xo
+            new_mino->v[1].dy = -1; 
+            new_mino->v[1].dx = 1; 
+            new_mino->v[2].dy = 0; 
+            new_mino->v[2].dx = 1; 
+            break;
+        case J:
+            new_mino->v[0].dy = -1;     // o
+            new_mino->v[0].dx = -1;    //  oxo
+            new_mino->v[1].dy = 0; 
+            new_mino->v[1].dx = -1; 
+            new_mino->v[2].dy = 0; 
+            new_mino->v[2].dx = 1; 
+            break;
+        case L:
+            new_mino->v[0].dy = 0;      //   o
+            new_mino->v[0].dx = -1;    //  oxo
+            new_mino->v[1].dy = 0; 
+            new_mino->v[1].dx = 1; 
+            new_mino->v[2].dy = -1; 
+            new_mino->v[2].dx = 1; 
+            break;
+        case S:
+            new_mino->v[0].dy = 0; 
+            new_mino->v[0].dx = -1;     //  oo
+            new_mino->v[1].dy = -1;    //  ox
+            new_mino->v[1].dx = 0; 
+            new_mino->v[2].dy = -1; 
+            new_mino->v[2].dx = 1; 
+            break;
+        case Z:
+            new_mino->v[0].dy = -1; 
+            new_mino->v[0].dx = -1;     // oo
+            new_mino->v[1].dy = -1;    //   xo
+            new_mino->v[1].dx = 0; 
+            new_mino->v[2].dy = 0; 
+            new_mino->v[2].dx = 1; 
+            break;
+        case T:
+            new_mino->v[0].dy = 0; 
+            new_mino->v[0].dx = -1;     // o
+            new_mino->v[1].dy = -1;    // oxo
+            new_mino->v[1].dx = 0; 
+            new_mino->v[2].dy = 0; 
+            new_mino->v[2].dx = 1; 
+            break;
+    }
+    return new_mino;
+}
 mino_t *make_mino(shape_t type) {
     mino_t *new_mino = calloc(1, sizeof(mino_t));
     if (new_mino == NULL) {
@@ -220,9 +287,8 @@ int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion) {
             }
             render_board(board, board->parent_window);
             board->render_limit = new_limit;
-            free(mino);
             // TODO: implement 7-bag
-            mino = make_mino((rand() % 7) + 1);
+            set_mino(mino, (rand() % 7) + 1);
             return 2;
         case SOFT_DROP:   
             return resolve_mino_motion(board, mino, GRAVITY);
