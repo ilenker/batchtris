@@ -144,12 +144,12 @@ void clear_rows(board_t *board, int fullrow, int count) {
     row_t *first_full_row = pre_gap->next;
     row_t *last_full_row;
 
-                mvprintw(0, 0, "clear_rows called on [%d]", fullrow);
+//              mvprintw(0, 0, "clear_rows called on [%d]", fullrow);
     last_full_row = first_full_row;
     for (int i = 0; i < 10; i++) {
-                __break
-                mvprintw(1, 0, "first_full_row->data[%d] = %d", i, last_full_row->data[i]);
-                point__
+//              __break
+//              mvprintw(1, 0, "first_full_row->data[%d] = %d", i, last_full_row->data[i]);
+//              point__
         first_full_row->data[i] = 9;     // reset row data
     }
     last_full_row->count = 0;
@@ -157,15 +157,15 @@ void clear_rows(board_t *board, int fullrow, int count) {
         last_full_row = last_full_row->next;
                 mvprintw(0, 0, "clear_rows called on [%d]->next", fullrow);
         for (int i = 0; i < 10; i++) {
-                __break
-                mvprintw(1, 0, "last_full_row->data[%d] = %d", i, last_full_row->data[i]);
-                point__
+//              __break
+//              mvprintw(1, 0, "last_full_row->data[%d] = %d", i, last_full_row->data[i]);
+//              point__
             last_full_row->data[i] = 9; 
         }
         last_full_row->count = 0;
         count--;
     }
-                wclear(board->parent_window);
+//              wclear(board->parent_window);
     pre_gap->next = last_full_row->next;
     last_full_row->next = board->head;
     board->head = first_full_row;

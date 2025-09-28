@@ -188,7 +188,6 @@ int main() {
                     }
                     printf("\n");
                 }
-                printf("its ok you can do this maybe probably\n");
                 free(mino);
                 free(board);
                 return 0;
@@ -203,7 +202,7 @@ int main() {
         debug_display(mino, board, g_debug_verbosity);
         g_gravity_timer -= 10;
         doupdate();
-        napms(15);
+        napms(20);
     }
 }
 
