@@ -46,24 +46,24 @@ int main() {
     wbkgd(board_win, COLOR_PAIR(8) | '*');
     refresh();
 
-    mino_t *mino = make_mino(T);
+    mino_t *mino = mino_init(T);
     board_t *board = calloc(1, sizeof(board_t));
     board->parent_window = board_win;
-    init_board_sll(board, 20, 10);
-    init_board(board, 20, 10);
-    render_mino(board_win, mino, '1');
-    render_board(board, board_win);
+    board_init_sll(board, 20, 10);
+    board_init(board, 20, 10);
+    mino_render(board_win, mino, '1');
+    board_render(board, board_win);
 
     row_t *current_row;
-    yield_next_row(NULL, 1);
+    row_iterator(NULL, 1);
     for (int y = 0; y < 20; y++) {
-        current_row = yield_next_row(board->head, 0); 
+        current_row = row_iterator(board->head, 0); 
         if (current_row == NULL) {
             break;
         } 
         current_row->count = 0;
     }
-    yield_next_row(NULL, 1);
+    row_iterator(NULL, 1);
 
  //   endwin();
    // printf("\n============TESTIN'=================\n");
@@ -123,51 +123,61 @@ int main() {
     wnoutrefresh(board_win);
 
     char input;
+    int bag[7];
     while (g_hatersgonnahate) {
-        input = getch();
-        switch (input) {
+        input = getch();            
+        switch (input) {                    
             case 'r':                          
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, ROTATE_CCW);
-                render_mino(board_win, mino, '1');
+                bag_shuffle(&bag[0]);
+                mvwprintw(stdscr, 9, 36, "bag: [%d, %d, %d, %d, %d, %d, %d]",
+                          bag[0],
+                          bag[1],
+                          bag[2],
+                          bag[3],
+                          bag[4],
+                          bag[5],
+                          bag[6]);
+                mino_render(board_win, mino, '0');
+                mino_resolve_motion(board, mino, ROTATE_CCW);
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case 's':                           
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, ROTATE_CW);
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '0');
+                mino_resolve_motion(board, mino, ROTATE_CW);
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case 't':                            
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, ROTATE_180);
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '0');
+                mino_resolve_motion(board, mino, ROTATE_180);
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case 'h':                             
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, MOVE_LEFT);
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '0');
+                mino_resolve_motion(board, mino, MOVE_LEFT);
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case ':':
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, MOVE_RIGHT);
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '0');
+                mino_resolve_motion(board, mino, MOVE_RIGHT);
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case ' ':
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, HARD_DROP);
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '0');
+                mino_resolve_motion(board, mino, HARD_DROP);
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case 'z':
-                render_mino(board_win, mino, '0');
-                if (resolve_mino_motion(board, mino, SOFT_DROP) == 3) {
+                mino_render(board_win, mino, '0');
+                if (mino_resolve_motion(board, mino, SOFT_DROP) == 3) {
                     wnoutrefresh(board_win);
                 }
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case 'q':
@@ -176,9 +186,9 @@ int main() {
                 printf("\n");
                 printf("----------debug------------\n");
                 row_t *current_row;
-                yield_next_row(NULL, 1);
+                row_iterator(NULL, 1);
                 for (int i = 0; i < 20; i++) {
-                    current_row = yield_next_row(board->head, 0); // sll iteration
+                    current_row = row_iterator(board->head, 0); // sll iteration
                     if (current_row == NULL) {break;}
                     printf("%d: ", i);
                     for (int j = 0; j < 10; j++) {
@@ -194,9 +204,9 @@ int main() {
         }
         if (g_gravity_timer < 0) {    
             g_gravity_timer = 500;
-            render_mino(board_win, mino, '0');
-            resolve_mino_motion(board, mino, GRAVITY);
-            render_mino(board_win, mino, '1');
+            mino_render(board_win, mino, '0');
+            mino_resolve_motion(board, mino, GRAVITY);
+            mino_render(board_win, mino, '1');
             wnoutrefresh(board_win);
         }
         debug_display(mino, board, g_debug_verbosity);

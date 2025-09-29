@@ -28,11 +28,11 @@ typedef struct Row {
     int count;
 } row_t;
 
-void init_board(board_t *board, char depth, char width);
-void render_board(board_t *board, WINDOW *window);
-int process_rows(board_t *board, int index, stackop_t operation);
+void board_init(board_t *board, char depth, char width);
+void board_render(board_t *board, WINDOW *window);
+int row_process(board_t *board, int index, stackop_t operation);
 row_t *row_at_index(board_t *board, int i);
-row_t *yield_next_row(row_t *head, int reset);
-void init_board_sll(board_t *board, char depth, char width);
-void clear_rows(board_t *board, int row, int count);
-int get_board_data_yx(board_t *board, int y, int x);
+row_t *row_iterator(row_t *head, int reset);
+void board_init_sll(board_t *board, char depth, char width);
+void row_clear(board_t *board, int row, int count);
+int board_data_at_yx(board_t *board, int y, int x);
