@@ -55,6 +55,7 @@ typedef struct Mino {
 void render_mino(WINDOW *window, mino_t *mino, char ch);
 void rotate_mino(mino_t *mino, rot_t rot);
 mino_t *make_mino(shape_t type);
+void set_mino(mino_t *new_mino, shape_t type);
 void rotate_vector(vec_t *v, rot_t rot);
 int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion);
 
