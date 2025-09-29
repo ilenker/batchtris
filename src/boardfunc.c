@@ -6,6 +6,28 @@
 
 #define point__ refresh(); doupdate(); wgetch(board->parent_window); nodelay(board->parent_window, TRUE);}
 
+int bag_next(board_t *board) {
+    board->bag_index = (board->bag_index + 1) % 14;
+    if (board->bag_index == 0 || board->bag_index == 7) {
+        bag_shuffle(&(board->bag)[board->bag_index]);
+    } 
+    return board->bag[board->bag_index];
+}
+void bag_shuffle(int *bag) {
+    int l;
+    int r = 1;
+    int temp;
+    for (int i = 0; i < 20; i++) {
+        l = rand() % 7; 
+        while (l == r) {
+            r = rand() % 7; 
+        }
+        temp = bag[l];
+        bag[l] = bag[r];
+        bag[r] = temp;
+    } 
+}
+
 
 int board_data_at_yx(board_t *board, int y, int x) {
     row_t *current = board->head; // I justify this with: we accessed the first
@@ -170,22 +192,22 @@ void row_clear(board_t *board, int fullrow, int n) {
     row_t *first_full_row = pre_gap->next;
     row_t *last_full_row;
 
-              mvprintw(0, 0, "clear_rows called on [%d]", fullrow);
+      //      mvprintw(0, 0, "clear_rows called on [%d]", fullrow);
     last_full_row = first_full_row;
     for (int i = 0; i < 10; i++) {
-              __break
-              mvprintw(1, 0, "first_full_row->data[%d] = %d", i, last_full_row->data[i]);
-              point__
+      //      __break
+      //      mvprintw(1, 0, "first_full_row->data[%d] = %d", i, last_full_row->data[i]);
+      //      point__
         first_full_row->data[i] = 9;     // reset row data
     }
     last_full_row->count = 0;
     while (n >= 2) {
         last_full_row = last_full_row->next;
-                mvprintw(0, 0, "clear_rows called on [%d]->next", fullrow);
+      //        mvprintw(0, 0, "clear_rows called on [%d]->next", fullrow);
         for (int i = 0; i < 10; i++) {
-              __break
-              mvprintw(1, 0, "last_full_row->data[%d] = %d", i, last_full_row->data[i]);
-              point__
+      //      __break
+      //      mvprintw(1, 0, "last_full_row->data[%d] = %d", i, last_full_row->data[i]);
+      //      point__
             last_full_row->data[i] = 9; 
         }
         last_full_row->count = 0;
@@ -231,9 +253,20 @@ row_t *row_iterator(row_t *head, int reset) {
 }
 
 void board_init(board_t *board, char depth, char width) {
+    // TODO: refactor this function
     board->depth = depth;
     board->width = width;
     board->render_limit = 0;
+    board->bag_index = 0;
+    board->bag[0] = I; board->bag[7]  = I;
+    board->bag[1] = O; board->bag[8]  = O;
+    board->bag[2] = J; board->bag[9]  = J;
+    board->bag[3] = L; board->bag[10] = L;
+    board->bag[4] = S; board->bag[11] = S;
+    board->bag[5] = Z; board->bag[12] = Z;
+    board->bag[6] = T; board->bag[13] = T;
+    bag_shuffle(board->bag);
+
     row_t *current_row;
     row_iterator(NULL, 1);
     for (int i = 0; i < 20; i++) {
@@ -247,13 +280,11 @@ void board_init(board_t *board, char depth, char width) {
     }
     for (int y = 0; y < board->depth; y++) {
         board->row_counts[y] = 0;
-      //  for (int x = 0; x < board->width; x++) {
-      //   board->NOGREP[board->depth - 1 - y][x] = 9;
-      //  } 
     }
 }
 
-void board_init_sll(board_t *board, char depth, char width) {
+void board_init_sll(board_t *board) {
+    // TODO: refactor this function
     #define I_will_not_encourage_others_to_fly = calloc(1, sizeof(row_t));
     row_t *row_0  I_will_not_encourage_others_to_fly
     row_t *row_1  I_will_not_encourage_others_to_fly 
@@ -298,6 +329,11 @@ void board_init_sll(board_t *board, char depth, char width) {
     row_19->next = NULL;
 
     board->head = row_0;
+}
+
+void bag_render(board_t *board, WINDOW* queuewindow) {
+    for (int i = 0; i < QUEUE_PREVIEW_LENGTH; i++) {
+    } 
 }
 // Reverse a List
 //:'t+1,.g/^/m 't

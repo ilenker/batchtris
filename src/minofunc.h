@@ -58,7 +58,6 @@ mino_t *mino_init(shape_t type);
 void mino_reset(mino_t *new_mino, shape_t type);
 void vector_rotate(vec_t *v, rot_t rot);
 int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion);
-void bag_shuffle(int bag[]);
 
 void debug_display(mino_t *mino, board_t *board, char verbosity);
 void test_minos();

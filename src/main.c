@@ -6,6 +6,7 @@
 #include "minofunc.h"
 #include "boardfunc.h"
 
+
 bool g_hatersgonnahate = true;
 char COLOR_ORANGE = 9;
 char COLOR_PURPLE = 10;
@@ -22,10 +23,11 @@ int main() {
     leaveok(stdscr, TRUE);
     curs_set(0);
 
+    // TODO: Rework color structure (don't use pairs for everything)
     start_color();
     init_color(COLOR_ORANGE, 929, 500, 100);
     init_color(COLOR_PURPLE, 650, 20, 900);
-    init_color(COLOR_GREY, 200, 200, 200);
+    init_color(COLOR_GREY, 130, 130, 130);
     init_pair(1, COLOR_CYAN, COLOR_CYAN);            // I
     init_pair(2, COLOR_YELLOW, COLOR_YELLOW);       // O 
     init_pair(3, COLOR_BLUE, COLOR_BLUE);          // J
@@ -46,11 +48,11 @@ int main() {
     wbkgd(board_win, COLOR_PAIR(8) | '*');
     refresh();
 
-    mino_t *mino = mino_init(T);
     board_t *board = calloc(1, sizeof(board_t));
     board->parent_window = board_win;
-    board_init_sll(board, 20, 10);
+    board_init_sll(board);
     board_init(board, 20, 10);
+    mino_t *mino = mino_init(board->bag[0]);
     mino_render(board_win, mino, '1');
     board_render(board, board_win);
 
@@ -64,79 +66,13 @@ int main() {
         current_row->count = 0;
     }
     row_iterator(NULL, 1);
-
- //   endwin();
-   // printf("\n============TESTIN'=================\n");
-/*
-    // Single full row move to tail
-      row_t *pre_full_row = row_at_index(board, 15-1); 
-      row_t *full_row = pre_full_row->next;
-
-      pre_full_row->next = full_row->next->next;
-      full_row->next->next = board->head;
-      board->head = full_row;
-*/
-
-    //row_t *tail = full_row;
-    //while (tail->next != NULL) {tail = tail->next;}
-    //printf("Tail: %c\n", tail->data[0]);
-//head ##############
-//     ##############
-//     ##############
-//     ##############
-//     ##############
-//     ##############
-//     ##############
-// pre ##############
-//  v fXXXXXXXXXXXXXX full. node->next full? Contiguous, else just resolve the one row.
-//  v  ##############
-//  v fXXXXXXXXXXXXXX  after hard drop, we have updated row counts. I don't believe we necessarily 
-//     ##############  start at the top. So we start at the highest (lowest index) row and go from
-//     ##############  there. 
-//     ##############
-//tail ##############
-//
-    //0   
-    //1
-    //2
-    //3
-    //4
-    //5
-    //6
-    //7
-    //8
-    //9
-    //10
-    //11
-    //12
-    //13
-    //14      pre_full_row
-                         //15  f   full_row
-                         //16  f   
-             //17      pre_full_new_next < Head 
-             //18
-             //19
-    //null         count = 1
-
-    //clear_rows(board, 15, 4);
-
     wnoutrefresh(board_win);
-
+                    char arstg;
     char input;
-    int bag[7];
     while (g_hatersgonnahate) {
         input = getch();            
         switch (input) {                    
             case 'r':                          
-                bag_shuffle(&bag[0]);
-                mvwprintw(stdscr, 9, 36, "bag: [%d, %d, %d, %d, %d, %d, %d]",
-                          bag[0],
-                          bag[1],
-                          bag[2],
-                          bag[3],
-                          bag[4],
-                          bag[5],
-                          bag[6]);
                 mino_render(board_win, mino, '0');
                 mino_resolve_motion(board, mino, ROTATE_CCW);
                 mino_render(board_win, mino, '1');
@@ -170,6 +106,33 @@ int main() {
                 mino_render(board_win, mino, '0');
                 mino_resolve_motion(board, mino, HARD_DROP);
                 mino_render(board_win, mino, '1');
+    switch (board->bag[board->bag_index]) {
+                    case 1: arstg = 'I'; break;
+                    case 2: arstg = 'O'; break;
+                    case 3: arstg = 'J'; break;
+                    case 4: arstg = 'L'; break;
+                    case 5: arstg = 'S'; break;
+                    case 6: arstg = 'Z'; break;
+                    case 7: arstg = 'T'; break;
+    }
+    mvwprintw(stdscr, 1, 5, "%c", arstg);
+    mvwprintw(stdscr, 3, 5 + 14 + (board->bag_index * 3), "   ^ ");
+    mvwprintw(stdscr, 2, 5, "bag index (%2d): [%d, %d, %d, %d, %d, %d, %d]", board->bag_index,
+              board->bag[0],
+              board->bag[1],
+              board->bag[2],
+              board->bag[3],
+              board->bag[4],
+              board->bag[5],
+              board->bag[6]);
+    wprintw(stdscr, "[%d, %d, %d, %d, %d, %d, %d]",
+              board->bag[7],
+              board->bag[8],
+              board->bag[9],
+              board->bag[10],
+              board->bag[11],
+              board->bag[12],
+              board->bag[13]);
                 wnoutrefresh(board_win);
                 break;
             case 'z':

@@ -236,11 +236,7 @@ int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
             }
             return 0;
         case HARD_DROP:
-            // TODO dont remove todo until done, this is just testing board population logic
-                                    // For each mino v[], go to corresponding board
-                                    // grid and set it's value to the mino->type
             while (mino_resolve_motion(board, mino, GRAVITY) != 3){} // Fall till obstacle
-            
             char new_limit = board->render_limit; 
 
                           /* ===Mino origin=== */
@@ -259,7 +255,7 @@ int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
 //                        point__
             }
 
-            /* ===Mino's 3x components=== */
+                      /* ===Mino's 3x components=== */
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx;    
@@ -283,8 +279,7 @@ int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
             }
             board_render(board, board->parent_window);
             board->render_limit = new_limit;
-            // TODO: implement 7-bag
-            mino_reset(mino, (rand() % 7) + 1);
+            mino_reset(mino, bag_next(board));
             return 2;
         case SOFT_DROP:   
             return mino_resolve_motion(board, mino, GRAVITY);
@@ -390,28 +385,6 @@ void rotate_vector_BKP(vec_t *v, char dir) {
             v->dx = (v->dx * -1) + (v->dy * 0);
             break;
     }
-}
-
-void bag_shuffle(int bag[]) {
-    int l;
-    int r = 1;
-    int temp;
-    bag[0] = I;
-    bag[1] = O;
-    bag[2] = J;
-    bag[3] = L;
-    bag[4] = S;
-    bag[5] = Z;
-    bag[6] = T;
-    for (int i = 0; i < 10; i++) {
-        l = rand() % 7; 
-        while (l == r) {
-            r = rand() % 7; 
-        }
-        temp = bag[l];
-        bag[l] = bag[r];
-        bag[r] = temp;
-    } 
 }
 
 void debug_display(mino_t *mino, board_t *board, char verbosity) {
