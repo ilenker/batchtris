@@ -79,7 +79,6 @@ void set_mino(mino_t *new_mino, shape_t type) {
             new_mino->v[2].dx = 1; 
             break;
     }
-    return new_mino;
 }
 mino_t *make_mino(shape_t type) {
     mino_t *new_mino = calloc(1, sizeof(mino_t));
