@@ -14,6 +14,7 @@ const vec_t g_irotation_lut[4] = {
     {-1, 0}
 };
 
+
 void mino_reset(mino_t *new_mino, shape_t type) {
     new_mino->type = type;
     new_mino->dir = 0;
@@ -150,18 +151,20 @@ mino_t *mino_init(shape_t type) {
     return new_mino;
 }
 
-// 0 = Motion success, boardstate unchanged 
-// 1 = Motion failed, boardstate unchanged
-// 2 = Motion success, boardstate changed
-// 3 = Motion failed, boardstate changed
-// 4 = Motion Success, boardstat changed, full rows detected
+
+#define SUCCESS_NOUPDATE 0
+#define SUCCESS_UPDATE 2
+#define FAIL_NOUPDATE 3
+#define BETS_ARE_OFF -1
+
 int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
+    int peek = 0;
     switch (motion) {
         case GRAVITY:       
             if (mino->y + 1 > board->depth ||
                 board_data_at_yx(board, mino->y + 1, mino->x) != 9) {
                 mino->falling = false;
-                return 3;
+                return FAIL_NOUPDATE;
             }
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy + 1;
@@ -169,37 +172,37 @@ int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
                 int yx_check = board_data_at_yx(board, y_check, x_check);
                 if (y_check > board->depth || yx_check != 9) {
                     mino->falling = false;
-                    return 3;
+                    return FAIL_NOUPDATE;
                 }
             }
             mino->y++;
-            return 0;
+            return SUCCESS_NOUPDATE;
         case MOVE_LEFT:
             if (mino->x - 1 < 0 || board_data_at_yx(board, mino->y, mino->x - 1) != 9) {
-                return 1;
+                return FAIL_NOUPDATE;
             }
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx - 1;    
                 if (x_check < 0 || board_data_at_yx(board, y_check, x_check)!= 9) {
-                    return 1;
+                    return FAIL_NOUPDATE;
                 }
             }
             mino->x--;
-            return 0;
+            return SUCCESS_NOUPDATE;
         case MOVE_RIGHT:
             if (mino->x + 1 >= board->width || board_data_at_yx(board, mino->y, mino->x + 1) != 9) {
-                return 1;
+                return FAIL_NOUPDATE;
             }
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx + 1;    
                 if (x_check >= board->width || board_data_at_yx(board, y_check, x_check) != 9) {
-                    return 1;
+                    return FAIL_NOUPDATE;
                 }
             }
             mino->x++;
-            return 0;
+            return SUCCESS_NOUPDATE;
         // TODO: Rotation is more stable, bugs might still lurk
         case ROTATE_CW:
             mino_rotate(mino, r270);
@@ -208,10 +211,10 @@ int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
                 int x_check = mino->x + mino->v[i].dx;    
                 if (board_data_at_yx(board, y_check, x_check) != 9) {
                     mino_rotate(mino, r90);
-                    return 1;
+                    return FAIL_NOUPDATE;
                 }
             }
-            return 0;
+            return SUCCESS_NOUPDATE;
         case ROTATE_CCW:
             mino_rotate(mino, r90);
             for (int i = 0; i < 3; i++) {
@@ -219,10 +222,10 @@ int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
                 int x_check = mino->x + mino->v[i].dx;    
                 if (board_data_at_yx(board, y_check, x_check) != 9) {
                     mino_rotate(mino, r270);
-                    return 1;
+                    return FAIL_NOUPDATE;
                 }
             }
-            return 0;
+            return SUCCESS_NOUPDATE;
         // TODO: Rotation is bugged I 180
         case ROTATE_180:
             mino_rotate(mino, r180);
@@ -231,28 +234,23 @@ int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
                 int x_check = mino->x + mino->v[i].dx;    
                 if (board_data_at_yx(board, y_check, x_check) != 9) {
                     mino_rotate(mino, r180);
-                    return 1;
+                    return FAIL_NOUPDATE;
                 }
             }
-            return 0;
+            return SUCCESS_NOUPDATE;
         case HARD_DROP:
             while (mino_resolve_motion(board, mino, GRAVITY) != 3){} // Fall till obstacle
             char new_limit = board->render_limit; 
 
-                          /* ===Mino origin=== */
+                           /* ===Mino origin=== */
             row_t *current_row = row_at_index(board, mino->y);
             current_row->data[mino->x] = mino->type;
             current_row->count++;
-
-   //                       move(1, 30); clrtoeol();
-   //                       move(2, 30); clrtoeol();
-   //                       move(3, 30); clrtoeol();
-   //                       move(4, 30); clrtoeol();
+            if (mino->y < new_limit) {
+                new_limit = mino->y;
+            }
             if (current_row->count == 10) {  // Row is full at xy
                 row_process(board, mino->y, PUSH); // ptr = 1
-//                        __break
-//                        mvprintw(1, 30, "mino->y : %d", mino->y);
-//                        point__
             }
 
                       /* ===Mino's 3x components=== */
@@ -265,26 +263,25 @@ int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
 
                 if (current_row->count == 10) {
                     row_process(board, y_check, PUSH);
-   //                       __break
-   //                       mvprintw(2 + i, 30, "mino[%d]->y : %d", i, y_check);
-   //                       point__
                 }
                 if (y_check < new_limit) {
                     new_limit = y_check;
                 }
             }
-            if (row_process(board, -1, PEEK) != 0) {
-                wclear(board->parent_window);
+            peek = row_process(board, -1, PEEK); 
+            if (peek != 0) {
+                new_limit -= peek;
                 row_process(board, -1, CLEAR);
             }
-            board_render(board, board->parent_window);
             board->render_limit = new_limit;
+            board_render(board, board->parent_window);
             mino_reset(mino, bag_next(board));
-            return 2;
+            doupdate();
+            return SUCCESS_UPDATE;
         case SOFT_DROP:   
             return mino_resolve_motion(board, mino, GRAVITY);
         default:
-            return -1;
+            return BETS_ARE_OFF;
     }
 }
 

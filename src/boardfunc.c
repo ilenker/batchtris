@@ -3,16 +3,19 @@
 #include "minofunc.h"
 
 #define __break {wclear(board->parent_window); board_render(board, board->parent_window); nodelay(board->parent_window, FALSE); 
-
 #define point__ refresh(); doupdate(); wgetch(board->parent_window); nodelay(board->parent_window, TRUE);}
 
 int bag_next(board_t *board) {
     board->bag_index = (board->bag_index + 1) % 14;
-    if (board->bag_index == 0 || board->bag_index == 7) {
-        bag_shuffle(&(board->bag)[board->bag_index]);
+    if (board->bag_index == 0){
+        bag_shuffle(&(board->bag)[7]);
+    } 
+    if (board->bag_index == 7){
+        bag_shuffle(&(board->bag)[0]);
     } 
     return board->bag[board->bag_index];
 }
+
 void bag_shuffle(int *bag) {
     int l;
     int r = 1;
@@ -49,14 +52,17 @@ void board_render(board_t *board, WINDOW *window) {
     for (int y = 0; y < 20; y++) {
         current_row = row_iterator(board->head, 0); 
         if (current_row == NULL) {break;} // sll iteration
+        if (y < board->render_limit) {continue;} // sll iteration
         for (int x = 0; x < 10; x++) {
-            if (current_row != NULL) {
-                col = current_row->data[x];
-                if (col != 9) {
-                    wattron(window, COLOR_PAIR(col));
-                    mvwaddch(window, y, x * 2, 'x'); 
-                    waddch(window, 'x'); 
-                }
+            col = current_row->data[x];
+            if (col != 9) {
+                wattron(window, COLOR_PAIR(col));
+                mvwaddch(window, y, x * 2, 'x'); 
+                waddch(window, 'x'); 
+            } else {
+                wattron(window, COLOR_PAIR(8));
+                mvwaddch(window, y, x * 2, 'x'); 
+                waddch(window, '*'); 
             }
         }
     }
@@ -66,29 +72,6 @@ int row_process(board_t *board, int row, stackop_t operation) {
     static int stack[4];  
     static int ptr = 0;
     static int min = 69;
-     
-   /*           mvaddstr(14, 30, "...............................");        
-                mvaddstr(15, 30, "...............................");        
-                mvaddstr(16, 30, "...............................");        
-                mvaddstr(17, 30, "...............................");        
-                mvaddstr(18, 30, "...............................");        
-                mvaddstr(19, 30, "...............................");        
-                mvaddstr(20, 30, "...............................");        
-                mvaddstr(21, 30, "...............................");        
-                mvaddstr(22, 30, "...............................");        
-                                                                            
-              __break                                                       
-              char *op;                                                     
-              if (operation == PUSH) {op = "PUSH";}                         
-              if (operation == POP) {op = "POP";}                           
-              if (operation == PEEK) {op = "PEEK";}                         
-              if (operation == CLEAR) {op = "CLEAR";}                       
-              mvprintw(14, 30, "process_rows(row = %d, op=%s)", row, op);   
-              mvprintw(15, 30, "ptr : %d", ptr);                            
-              mvprintw(16, 30, "<proceed?>");                               
-              point__                                                       
-              mvprintw(16, 30, "_____________________________");          */
-                                                                                  
     switch (operation) {
         case POP:
             ptr--;
@@ -104,13 +87,6 @@ int row_process(board_t *board, int row, stackop_t operation) {
             // will be assumed contiguous, so we will
             // implement that if we get there.(^=_=^)
             stack[ptr] = row;
-
-            //  __break                                                     /*//*/
-            //  mvprintw(17, 30, "set stack[ptr:%d] = %2d (row)", ptr, row);  //
-            //  mvprintw(18, 30, "<proceed?>");                               //
-            //  point__                                                       //
-            //  mvprintw(18, 30, "_____________________________");            //
-
             ptr++;
             if (row < min) {
                 min = row;
@@ -158,18 +134,9 @@ int row_process(board_t *board, int row, stackop_t operation) {
                 stack[2] ^= stack[1];
                 stack[1] ^= stack[2];
             }
-            
             if (ptr > 0) {
                 while (ptr > 0) { 
                     ptr--; 
-
-    //              __break                                                     /* // */
-    //              mvprintw(19, 30, "___________loopin..._________");             //
-    //              mvprintw(20, 30, "stack[ptr:%d]: [%2d]", ptr, stack[ptr]);     //
-    //              mvprintw(21, 30, "clear_rows(%2d, 1)", stack[ptr]);            //
-    //              mvprintw(22, 30, "          <proceed>          ");             //
-    //              point__                                                        //
-
                     row_clear(board, stack[ptr], 1);          
                     stack[ptr] = -2;
                 }
@@ -192,28 +159,19 @@ void row_clear(board_t *board, int fullrow, int n) {
     row_t *first_full_row = pre_gap->next;
     row_t *last_full_row;
 
-      //      mvprintw(0, 0, "clear_rows called on [%d]", fullrow);
     last_full_row = first_full_row;
     for (int i = 0; i < 10; i++) {
-      //      __break
-      //      mvprintw(1, 0, "first_full_row->data[%d] = %d", i, last_full_row->data[i]);
-      //      point__
         first_full_row->data[i] = 9;     // reset row data
     }
     last_full_row->count = 0;
     while (n >= 2) {
         last_full_row = last_full_row->next;
-      //        mvprintw(0, 0, "clear_rows called on [%d]->next", fullrow);
         for (int i = 0; i < 10; i++) {
-      //      __break
-      //      mvprintw(1, 0, "last_full_row->data[%d] = %d", i, last_full_row->data[i]);
-      //      point__
             last_full_row->data[i] = 9; 
         }
         last_full_row->count = 0;
         n--;
     }
-              wclear(board->parent_window);
     pre_gap->next = last_full_row->next;
     last_full_row->next = board->head;
     board->head = first_full_row;
@@ -256,7 +214,7 @@ void board_init(board_t *board, char depth, char width) {
     // TODO: refactor this function
     board->depth = depth;
     board->width = width;
-    board->render_limit = 0;
+    board->render_limit = 19;
     board->bag_index = 0;
     board->bag[0] = I; board->bag[7]  = I;
     board->bag[1] = O; board->bag[8]  = O;
@@ -266,6 +224,7 @@ void board_init(board_t *board, char depth, char width) {
     board->bag[5] = Z; board->bag[12] = Z;
     board->bag[6] = T; board->bag[13] = T;
     bag_shuffle(board->bag);
+    bag_shuffle(&board->bag[7]);
 
     row_t *current_row;
     row_iterator(NULL, 1);

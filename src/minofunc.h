@@ -44,11 +44,11 @@ typedef struct Vector {
 } vec_t;
 
 typedef struct Mino {
-    vec_t v[3];            // 6
-    shape_t type;          // 4
-    int y;                 // 1
-    int x;                 // 1
-    int dir;      // 1
+    vec_t v[3];      
+    shape_t type;    
+    int y;           
+    int x;           
+    int dir;     
     bool falling;
 } mino_t;
 

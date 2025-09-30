@@ -2,25 +2,79 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ncurses.h>
-#include <panel.h>
 #include "minofunc.h"
 #include "boardfunc.h"
+#include "sprites.h"
 
+/*     
+ *    
+ *    (^=__=^)
+ *    ~Overview~                      [complexity][time]
+ *       
+ *  FUNDAMENTAL MECHANICS    
+ *     |_piece hold                   [v.easy]    [quick]
+ *     |_scoring                      [medium]    [mid]
+ *     \_combos and B2Bs              [medium]    [mid]
+ *
+ *  PLANTRIS MECHANICS
+ *     |_plan phase:
+ *     |     |_text interface
+ *     |     |_based on finesse
+ *     |     |_need rapid prototypes
+ *     |     |_
+ *     |_execute phase: uses
+ *       fundamentals, replay
+ *       a sequence of inputs
+ *
+ *  MENU SYSTEM
+ *     |_board/window states          [hard?]     [long] 
+ *     |_used for tutorials,          [indeed]    [yes]
+ *     |   plan-execute loop         
+ *     \_transitions                  [medium]    [long]
+ *
+ *  AESTHETICS
+ *     |_little window for
+ *     | combo/clear display
+ *     | w/sick animations
+ *     | when you TSD
+ *     \_way to do nice easeing
+ *       on screen transitions
+ *  
+ *  PROBABLYS
+ *     \_40l sprint
+ *                                    
+ *  MAYBES                            
+ *     |_live undo                    [hard]      [long]
+ *     |_finesse logic                [hard]      [long]
+ *     \_customize themes             [maybe]     [mid]
+ *                                    
+ *  PROBABLY NOTS                     
+ *     |_solvers(find t-spin          [ultra]     [forever]
+ *     | setups? doubles? efficiency?)
+ *     \_xinput mode for key          [basically impossible]
+ *         release, DAS, ARR
+ *
+ */
 
-bool g_hatersgonnahate = true;
+#define SUCCESS_NOUPDATE 0
+#define SUCCESS_UPDATE 2
+#define FAIL_NOUPDATE 3
+#define BETS_ARE_OFF -1
+
+bool itiswhatitis = true;
 char COLOR_ORANGE = 9;
 char COLOR_PURPLE = 10;
 char COLOR_GREY = 11;
-char g_debug_verbosity = 3;
+char g_debug_verbosity = 1;
 int g_gravity_timer = 500;
 
 int main() {
     initscr();
     cbreak();
     noecho();
-    scrollok(stdscr, FALSE);
-    nodelay(stdscr, TRUE);
-    leaveok(stdscr, TRUE);
+    scrollok(stdscr, 0);
+    nodelay(stdscr, 1);
+    leaveok(stdscr, 1);
     curs_set(0);
 
     // TODO: Rework color structure (don't use pairs for everything)
@@ -37,13 +91,14 @@ int main() {
     init_pair(7, COLOR_PURPLE, COLOR_PURPLE);  // T
     init_pair(8, COLOR_BLACK, COLOR_BLACK);   // Blank 
     init_pair(9, COLOR_WHITE, COLOR_BLACK);  // Text 
-    init_pair(10, COLOR_ORANGE, COLOR_GREY);// Text 
+    init_pair(10, COLOR_WHITE, COLOR_GREY); // Text 
     wbkgd(stdscr, COLOR_PAIR(10));
 
-    WINDOW *board_win = newwin(20, 20, 6, 6);  // window for the board itself
-    scrollok(board_win, FALSE);
-    leaveok(board_win, TRUE);
-    nodelay(board_win, TRUE);
+           /* BOARD WINDOW INIT */
+    WINDOW *board_win = newwin(20, 20, BOARD_Y, BOARD_X); // 20x20 board at y=6, x=6  
+    scrollok(board_win, 0);
+    leaveok(board_win, 1);
+    nodelay(board_win, 1);
     wclear(stdscr);
     wbkgd(board_win, COLOR_PAIR(8) | '*');
     refresh();
@@ -51,11 +106,6 @@ int main() {
     board_t *board = calloc(1, sizeof(board_t));
     board->parent_window = board_win;
     board_init_sll(board);
-    board_init(board, 20, 10);
-    mino_t *mino = mino_init(board->bag[0]);
-    mino_render(board_win, mino, '1');
-    board_render(board, board_win);
-
     row_t *current_row;
     row_iterator(NULL, 1);
     for (int y = 0; y < 20; y++) {
@@ -65,11 +115,30 @@ int main() {
         } 
         current_row->count = 0;
     }
-    row_iterator(NULL, 1);
+    row_iterator(NULL, 1);  
+    board_init(board, 20, 10);
+
+            /* MINO INIT */
+    mino_t *mino = mino_init(board->bag[0]);
+    mino_render(board_win, mino, '1');
+    board_render(board, board_win);
+
+         /* SPRITE PAD INIT */
+    WINDOW *sprites = newpad(16, 16); 
+    sprite_t sprite_data[16];
+    sprites_minos_init(sprites, &sprite_data[0]);
+
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], 11, 27);
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], 14, 27);
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], 17, 27);
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], 20, 27);
+
     wnoutrefresh(board_win);
+
                     char arstg;
     char input;
-    while (g_hatersgonnahate) {
+    int state_update;
+    while (itiswhatitis) {
         input = getch();            
         switch (input) {                    
             case 'r':                          
@@ -104,8 +173,9 @@ int main() {
                 break;
             case ' ':
                 mino_render(board_win, mino, '0');
-                mino_resolve_motion(board, mino, HARD_DROP);
+                state_update = mino_resolve_motion(board, mino, HARD_DROP);
                 mino_render(board_win, mino, '1');
+
     switch (board->bag[board->bag_index]) {
                     case 1: arstg = 'I'; break;
                     case 2: arstg = 'O'; break;
@@ -133,6 +203,11 @@ int main() {
               board->bag[11],
               board->bag[12],
               board->bag[13]);
+                
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], 11, 27);
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], 14, 27);
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], 17, 27);
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], 20, 27);
                 wnoutrefresh(board_win);
                 break;
             case 'z':
@@ -164,6 +239,8 @@ int main() {
                 free(mino);
                 free(board);
                 return 0;
+            case '1':
+                main(); // totally professional clean 10x vibes are on.
         }
         if (g_gravity_timer < 0) {    
             g_gravity_timer = 500;
@@ -174,8 +251,9 @@ int main() {
         }
         debug_display(mino, board, g_debug_verbosity);
         g_gravity_timer -= 10;
-        doupdate();
-        napms(20);
+        if (state_update != SUCCESS_UPDATE) doupdate();
+        state_update = BETS_ARE_OFF;
+        napms(17);
     }
 }
 

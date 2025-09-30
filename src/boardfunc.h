@@ -4,6 +4,8 @@
 #include <stdlib.h>
 
 #define QUEUE_PREVIEW_LENGTH 5
+#define BOARD_Y 6
+#define BOARD_X 6
 
 typedef struct Row row_t;
 
