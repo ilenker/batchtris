@@ -44,20 +44,20 @@ typedef struct Vector {
 } vec_t;
 
 typedef struct Mino {
-    vec_t v[3];             // 6
-    shape_t type;           // 4
-    int y;                 // 1
-    int x;                 // 1
-    int dir;      // 1
+    vec_t v[3];      
+    shape_t type;    
+    int y;           
+    int x;           
+    int dir;     
     bool falling;
 } mino_t;
 
-void render_mino(WINDOW *window, mino_t *mino, char ch);
-void rotate_mino(mino_t *mino, rot_t rot);
-mino_t *make_mino(shape_t type);
-void set_mino(mino_t *new_mino, shape_t type);
-void rotate_vector(vec_t *v, rot_t rot);
-int resolve_mino_motion(board_t *board, mino_t *mino, motion_t motion);
+void mino_render(WINDOW *window, mino_t *mino, char ch);
+void mino_rotate(mino_t *mino, rot_t rot);
+mino_t *mino_init(shape_t type);
+void mino_reset(mino_t *new_mino, shape_t type);
+void vector_rotate(vec_t *v, rot_t rot);
+int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion);
 
 void debug_display(mino_t *mino, board_t *board, char verbosity);
 void test_minos();

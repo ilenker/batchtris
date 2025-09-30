@@ -2,30 +2,86 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ncurses.h>
-#include <panel.h>
 #include "minofunc.h"
 #include "boardfunc.h"
+#include "sprites.h"
 
-bool g_hatersgonnahate = true;
+/*     
+ *    
+ *    (^=__=^)
+ *    ~Overview~                      [complexity][time]
+ *       
+ *  FUNDAMENTAL MECHANICS    
+ *     |_piece hold                   [v.easy]    [quick]
+ *     |_scoring                      [medium]    [mid]
+ *     \_combos and B2Bs              [medium]    [mid]
+ *
+ *  PLANTRIS MECHANICS
+ *     |_plan phase:
+ *     |     |_text interface
+ *     |     |_based on finesse
+ *     |     |_need rapid prototypes
+ *     |     |_
+ *     |_execute phase: uses
+ *       fundamentals, replay
+ *       a sequence of inputs
+ *
+ *  MENU SYSTEM
+ *     |_board/window states          [hard?]     [long] 
+ *     |_used for tutorials,          [indeed]    [yes]
+ *     |   plan-execute loop         
+ *     \_transitions                  [medium]    [long]
+ *
+ *  AESTHETICS
+ *     |_little window for
+ *     | combo/clear display
+ *     | w/sick animations
+ *     | when you TSD
+ *     \_way to do nice easeing
+ *       on screen transitions
+ *  
+ *  PROBABLYS
+ *     \_40l sprint
+ *                                    
+ *  MAYBES                            
+ *     |_live undo                    [hard]      [long]
+ *     |_finesse logic                [hard]      [long]
+ *     \_customize themes             [maybe]     [mid]
+ *                                    
+ *  PROBABLY NOTS                     
+ *     |_solvers(find t-spin          [ultra]     [forever]
+ *     | setups? doubles? efficiency?)
+ *     \_xinput mode for key          [basically impossible]
+ *         release, DAS, ARR
+ *
+ */
+
+#define SUCCESS_NOUPDATE 0
+#define SUCCESS_UPDATE 2
+#define FAIL_NOUPDATE 3
+#define BETS_ARE_OFF -1
+
+bool itiswhatitis = true;
 char COLOR_ORANGE = 9;
 char COLOR_PURPLE = 10;
 char COLOR_GREY = 11;
-char g_debug_verbosity = 3;
+char g_debug_verbosity = 1;
 int g_gravity_timer = 500;
 
 int main() {
     initscr();
     cbreak();
     noecho();
-    scrollok(stdscr, FALSE);
-    nodelay(stdscr, TRUE);
-    leaveok(stdscr, TRUE);
+    scrollok(stdscr, 0);
+    nodelay(stdscr, 1);
+    leaveok(stdscr, 1);
     curs_set(0);
 
+    // TODO: Rework color structure (don't use pairs for everything)
     start_color();
     init_color(COLOR_ORANGE, 929, 500, 100);
     init_color(COLOR_PURPLE, 650, 20, 900);
-    init_color(COLOR_GREY, 200, 200, 200);
+    init_color(COLOR_GREY, 130, 130, 130);
     init_pair(1, COLOR_CYAN, COLOR_CYAN);            // I
     init_pair(2, COLOR_YELLOW, COLOR_YELLOW);       // O 
     init_pair(3, COLOR_BLUE, COLOR_BLUE);          // J
@@ -35,139 +91,131 @@ int main() {
     init_pair(7, COLOR_PURPLE, COLOR_PURPLE);  // T
     init_pair(8, COLOR_BLACK, COLOR_BLACK);   // Blank 
     init_pair(9, COLOR_WHITE, COLOR_BLACK);  // Text 
-    init_pair(10, COLOR_ORANGE, COLOR_GREY);// Text 
+    init_pair(10, COLOR_WHITE, COLOR_GREY); // Text 
     wbkgd(stdscr, COLOR_PAIR(10));
 
-    WINDOW *board_win = newwin(20, 20, 6, 6);  // window for the board itself
-    scrollok(board_win, FALSE);
-    leaveok(board_win, TRUE);
-    nodelay(board_win, TRUE);
+           /* BOARD WINDOW INIT */
+    WINDOW *board_win = newwin(20, 20, BOARD_Y, BOARD_X); // 20x20 board at y=6, x=6  
+    scrollok(board_win, 0);
+    leaveok(board_win, 1);
+    nodelay(board_win, 1);
     wclear(stdscr);
     wbkgd(board_win, COLOR_PAIR(8) | '*');
     refresh();
 
-    mino_t *mino = make_mino(T);
     board_t *board = calloc(1, sizeof(board_t));
     board->parent_window = board_win;
-    init_board_sll(board, 20, 10);
-    init_board(board, 20, 10);
-    render_mino(board_win, mino, '1');
-    render_board(board, board_win);
-
+    board_init_sll(board);
     row_t *current_row;
-    yield_next_row(NULL, 1);
+    row_iterator(NULL, 1);
     for (int y = 0; y < 20; y++) {
-        current_row = yield_next_row(board->head, 0); 
+        current_row = row_iterator(board->head, 0); 
         if (current_row == NULL) {
             break;
         } 
         current_row->count = 0;
     }
-    yield_next_row(NULL, 1);
+    row_iterator(NULL, 1);  
+    board_init(board, 20, 10);
 
- //   endwin();
-   // printf("\n============TESTIN'=================\n");
-/*
-    // Single full row move to tail
-      row_t *pre_full_row = row_at_index(board, 15-1); 
-      row_t *full_row = pre_full_row->next;
+            /* MINO INIT */
+    mino_t *mino = mino_init(board->bag[0]);
+    mino_render(board_win, mino, '1');
+    board_render(board, board_win);
 
-      pre_full_row->next = full_row->next->next;
-      full_row->next->next = board->head;
-      board->head = full_row;
-*/
+         /* SPRITE PAD INIT */
+    WINDOW *sprites = newpad(16, 16); 
+    sprite_t sprite_data[16];
+    sprites_minos_init(sprites, &sprite_data[0]);
 
-    //row_t *tail = full_row;
-    //while (tail->next != NULL) {tail = tail->next;}
-    //printf("Tail: %c\n", tail->data[0]);
-//head ##############
-//     ##############
-//     ##############
-//     ##############
-//     ##############
-//     ##############
-//     ##############
-// pre ##############
-//  v fXXXXXXXXXXXXXX full. node->next full? Contiguous, else just resolve the one row.
-//  v  ##############
-//  v fXXXXXXXXXXXXXX  after hard drop, we have updated row counts. I don't believe we necessarily 
-//     ##############  start at the top. So we start at the highest (lowest index) row and go from
-//     ##############  there. 
-//     ##############
-//tail ##############
-//
-    //0   
-    //1
-    //2
-    //3
-    //4
-    //5
-    //6
-    //7
-    //8
-    //9
-    //10
-    //11
-    //12
-    //13
-    //14      pre_full_row
-                         //15  f   full_row
-                         //16  f   
-             //17      pre_full_new_next < Head 
-             //18
-             //19
-    //null         count = 1
-
-    //clear_rows(board, 15, 4);
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], 11, 27);
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], 14, 27);
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], 17, 27);
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], 20, 27);
 
     wnoutrefresh(board_win);
 
+                    char arstg;
     char input;
-    while (g_hatersgonnahate) {
-        input = getch();
-        switch (input) {
+    int state_update;
+    while (itiswhatitis) {
+        input = getch();            
+        switch (input) {                    
             case 'r':                          
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, ROTATE_CCW);
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '0');
+                mino_resolve_motion(board, mino, ROTATE_CCW);
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case 's':                           
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, ROTATE_CW);
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '0');
+                mino_resolve_motion(board, mino, ROTATE_CW);
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case 't':                            
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, ROTATE_180);
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '0');
+                mino_resolve_motion(board, mino, ROTATE_180);
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case 'h':                             
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, MOVE_LEFT);
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '0');
+                mino_resolve_motion(board, mino, MOVE_LEFT);
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case ':':
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, MOVE_RIGHT);
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '0');
+                mino_resolve_motion(board, mino, MOVE_RIGHT);
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case ' ':
-                render_mino(board_win, mino, '0');
-                resolve_mino_motion(board, mino, HARD_DROP);
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '0');
+                state_update = mino_resolve_motion(board, mino, HARD_DROP);
+                mino_render(board_win, mino, '1');
+
+    switch (board->bag[board->bag_index]) {
+                    case 1: arstg = 'I'; break;
+                    case 2: arstg = 'O'; break;
+                    case 3: arstg = 'J'; break;
+                    case 4: arstg = 'L'; break;
+                    case 5: arstg = 'S'; break;
+                    case 6: arstg = 'Z'; break;
+                    case 7: arstg = 'T'; break;
+    }
+    mvwprintw(stdscr, 1, 5, "%c", arstg);
+    mvwprintw(stdscr, 3, 5 + 14 + (board->bag_index * 3), "   ^ ");
+    mvwprintw(stdscr, 2, 5, "bag index (%2d): [%d, %d, %d, %d, %d, %d, %d]", board->bag_index,
+              board->bag[0],
+              board->bag[1],
+              board->bag[2],
+              board->bag[3],
+              board->bag[4],
+              board->bag[5],
+              board->bag[6]);
+    wprintw(stdscr, "[%d, %d, %d, %d, %d, %d, %d]",
+              board->bag[7],
+              board->bag[8],
+              board->bag[9],
+              board->bag[10],
+              board->bag[11],
+              board->bag[12],
+              board->bag[13]);
+                
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], 11, 27);
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], 14, 27);
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], 17, 27);
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], 20, 27);
                 wnoutrefresh(board_win);
                 break;
             case 'z':
-                render_mino(board_win, mino, '0');
-                if (resolve_mino_motion(board, mino, SOFT_DROP) == 3) {
+                mino_render(board_win, mino, '0');
+                if (mino_resolve_motion(board, mino, SOFT_DROP) == 3) {
                     wnoutrefresh(board_win);
                 }
-                render_mino(board_win, mino, '1');
+                mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
             case 'q':
@@ -176,9 +224,9 @@ int main() {
                 printf("\n");
                 printf("----------debug------------\n");
                 row_t *current_row;
-                yield_next_row(NULL, 1);
+                row_iterator(NULL, 1);
                 for (int i = 0; i < 20; i++) {
-                    current_row = yield_next_row(board->head, 0); // sll iteration
+                    current_row = row_iterator(board->head, 0); // sll iteration
                     if (current_row == NULL) {break;}
                     printf("%d: ", i);
                     for (int j = 0; j < 10; j++) {
@@ -191,18 +239,21 @@ int main() {
                 free(mino);
                 free(board);
                 return 0;
+            case '1':
+                main(); // totally professional clean 10x vibes are on.
         }
         if (g_gravity_timer < 0) {    
             g_gravity_timer = 500;
-            render_mino(board_win, mino, '0');
-            resolve_mino_motion(board, mino, GRAVITY);
-            render_mino(board_win, mino, '1');
+            mino_render(board_win, mino, '0');
+            mino_resolve_motion(board, mino, GRAVITY);
+            mino_render(board_win, mino, '1');
             wnoutrefresh(board_win);
         }
         debug_display(mino, board, g_debug_verbosity);
         g_gravity_timer -= 10;
-        doupdate();
-        napms(20);
+        if (state_update != SUCCESS_UPDATE) doupdate();
+        state_update = BETS_ARE_OFF;
+        napms(17);
     }
 }
 

@@ -1,0 +1,53 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-I./src",
+      "-Wextra",
+      "-Wall",
+      "-Wshadow",
+      "-Wpointer-arith",
+      "-o",
+      "batchtris",
+      "src/main.c"
+    ],
+    "directory": "/home/ilenker/workspace/github.com/ilenker/plantris",
+    "file": "/home/ilenker/workspace/github.com/ilenker/plantris/src/main.c",
+    "output": "/home/ilenker/workspace/github.com/ilenker/plantris/batchtris"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-I./src",
+      "-Wextra",
+      "-Wall",
+      "-Wshadow",
+      "-Wpointer-arith",
+      "-o",
+      "batchtris",
+      "src/boardfunc.c"
+    ],
+    "directory": "/home/ilenker/workspace/github.com/ilenker/plantris",
+    "file": "/home/ilenker/workspace/github.com/ilenker/plantris/src/boardfunc.c",
+    "output": "/home/ilenker/workspace/github.com/ilenker/plantris/batchtris"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-I./src",
+      "-Wextra",
+      "-Wall",
+      "-Wshadow",
+      "-Wpointer-arith",
+      "-o",
+      "batchtris",
+      "src/minofunc.c"
+    ],
+    "directory": "/home/ilenker/workspace/github.com/ilenker/plantris",
+    "file": "/home/ilenker/workspace/github.com/ilenker/plantris/src/minofunc.c",
+    "output": "/home/ilenker/workspace/github.com/ilenker/plantris/batchtris"
+  }
+]

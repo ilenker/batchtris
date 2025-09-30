@@ -3,6 +3,10 @@
 #include <ncurses.h>
 #include <stdlib.h>
 
+#define QUEUE_PREVIEW_LENGTH 5
+#define BOARD_Y 6
+#define BOARD_X 6
+
 typedef struct Row row_t;
 
 typedef enum StackOperation {
@@ -20,6 +24,8 @@ typedef struct Board {
     char grid[20][10]; 
     char row_counts[20];
     WINDOW *parent_window;
+    int bag[14];
+    int bag_index;
 } board_t;
 
 typedef struct Row {
@@ -28,11 +34,13 @@ typedef struct Row {
     int count;
 } row_t;
 
-void init_board(board_t *board, char depth, char width);
-void render_board(board_t *board, WINDOW *window);
-int process_rows(board_t *board, int index, stackop_t operation);
+void board_init(board_t *board, char depth, char width);
+void board_render(board_t *board, WINDOW *window);
+int row_process(board_t *board, int index, stackop_t operation);
 row_t *row_at_index(board_t *board, int i);
-row_t *yield_next_row(row_t *head, int reset);
-void init_board_sll(board_t *board, char depth, char width);
-void clear_rows(board_t *board, int row, int count);
-int get_board_data_yx(board_t *board, int y, int x);
+row_t *row_iterator(row_t *head, int reset);
+void board_init_sll(board_t *board);
+void row_clear(board_t *board, int row, int count);
+int board_data_at_yx(board_t *board, int y, int x);
+int bag_next(board_t *board);
+void bag_shuffle(int *bag);
