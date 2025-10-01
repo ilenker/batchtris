@@ -3,9 +3,6 @@
 #include "minofunc.h"
 
 void sprite_draw_yx(WINDOW *sprites, sprite_t *s, int y, int x) {
-    mvprintw(27, 0, "memy: %d, memx: %d", s->memy, s->memx);
-    mvprintw(28, 0, "h: %d, w: %d", s->height, s->width);
-    mvprintw(28, 0, "h: %d, w: %d", s->height, s->width);
     prefresh(sprites, s->memy, s->memx, y, x, y + s->height - 1, x + s->width - 1);                          
 }
 

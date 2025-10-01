@@ -2,7 +2,6 @@
 
 #include "boardfunc.h"
 #include <ncurses.h>
-#include <stdlib.h>
 
 typedef enum GlobalGameState {
     MENU,

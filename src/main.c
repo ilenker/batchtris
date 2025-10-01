@@ -12,7 +12,6 @@
  *    ~Overview~                      [complexity][time]
  *       
  *  FUNDAMENTAL MECHANICS    
- *     |_piece hold                   [v.easy]    [quick]
  *     |_scoring                      [medium]    [mid]
  *     \_combos and B2Bs              [medium]    [mid]
  *
@@ -62,13 +61,16 @@
 #define BETS_ARE_OFF -1
 
 bool itiswhatitis = true;
-char COLOR_ORANGE = 9;
-char COLOR_PURPLE = 10;
-char COLOR_GREY = 11;
-char g_debug_verbosity = 1;
-int g_gravity_timer = 500;
+bool hold_available = true;
+bool first_hold = true;
+#define COLOR_ORANGE 9
+#define COLOR_PURPLE 10
+#define COLOR_GREY 11
 
 int main() {
+    shape_t hold;
+    char g_debug_verbosity = 0;
+    int g_gravity_timer = 500;
     initscr();
     cbreak();
     noecho();
@@ -78,6 +80,7 @@ int main() {
     curs_set(0);
 
     // TODO: Rework color structure (don't use pairs for everything)
+    // TODO: support 8 color terminals
     start_color();
     init_color(COLOR_ORANGE, 929, 500, 100);
     init_color(COLOR_PURPLE, 650, 20, 900);
@@ -128,37 +131,40 @@ int main() {
     sprite_t sprite_data[16];
     sprites_minos_init(sprites, &sprite_data[0]);
 
-    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], 11, 27);
-    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], 14, 27);
-    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], 17, 27);
-    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], 20, 27);
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], BOARD_Y + 5,  BOARD_X + 21);
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], BOARD_Y + 8,  BOARD_X + 21);
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], BOARD_Y + 11, BOARD_X + 21);
+    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], BOARD_Y + 14, BOARD_X + 21);
 
     wnoutrefresh(board_win);
 
-                    char arstg;
     char input;
     int state_update;
     while (itiswhatitis) {
         input = getch();            
         switch (input) {                    
+            case 'R':                          
             case 'r':                          
                 mino_render(board_win, mino, '0');
                 mino_resolve_motion(board, mino, ROTATE_CCW);
                 mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
+            case 'S':                           
             case 's':                           
                 mino_render(board_win, mino, '0');
                 mino_resolve_motion(board, mino, ROTATE_CW);
                 mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
+            case 'T':                            
             case 't':                            
                 mino_render(board_win, mino, '0');
                 mino_resolve_motion(board, mino, ROTATE_180);
                 mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
+            case 'H':                             
             case 'h':                             
                 mino_render(board_win, mino, '0');
                 mino_resolve_motion(board, mino, MOVE_LEFT);
@@ -174,42 +180,15 @@ int main() {
             case ' ':
                 mino_render(board_win, mino, '0');
                 state_update = mino_resolve_motion(board, mino, HARD_DROP);
+                hold_available = true;
                 mino_render(board_win, mino, '1');
-
-    switch (board->bag[board->bag_index]) {
-                    case 1: arstg = 'I'; break;
-                    case 2: arstg = 'O'; break;
-                    case 3: arstg = 'J'; break;
-                    case 4: arstg = 'L'; break;
-                    case 5: arstg = 'S'; break;
-                    case 6: arstg = 'Z'; break;
-                    case 7: arstg = 'T'; break;
-    }
-    mvwprintw(stdscr, 1, 5, "%c", arstg);
-    mvwprintw(stdscr, 3, 5 + 14 + (board->bag_index * 3), "   ^ ");
-    mvwprintw(stdscr, 2, 5, "bag index (%2d): [%d, %d, %d, %d, %d, %d, %d]", board->bag_index,
-              board->bag[0],
-              board->bag[1],
-              board->bag[2],
-              board->bag[3],
-              board->bag[4],
-              board->bag[5],
-              board->bag[6]);
-    wprintw(stdscr, "[%d, %d, %d, %d, %d, %d, %d]",
-              board->bag[7],
-              board->bag[8],
-              board->bag[9],
-              board->bag[10],
-              board->bag[11],
-              board->bag[12],
-              board->bag[13]);
-                
-                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], 11, 27);
-                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], 14, 27);
-                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], 17, 27);
-                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], 20, 27);
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], BOARD_Y + 5,  BOARD_X + 21);
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], BOARD_Y + 8,  BOARD_X + 21);
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], BOARD_Y + 11, BOARD_X + 21);
+                sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], BOARD_Y + 14, BOARD_X + 21);
                 wnoutrefresh(board_win);
                 break;
+            case 'Z':
             case 'z':
                 mino_render(board_win, mino, '0');
                 if (mino_resolve_motion(board, mino, SOFT_DROP) == 3) {
@@ -218,17 +197,43 @@ int main() {
                 mino_render(board_win, mino, '1');
                 wnoutrefresh(board_win);
                 break;
+            case 'A':
+            case 'a':
+                if (hold_available) {
+                    mino_render(board_win, mino, '0');
+                    if (first_hold) {
+                        hold = mino->type;
+                        mino_reset(mino, bag_next(board));
+                        first_hold = false;
+                        sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], BOARD_Y + 5,  BOARD_X + 21);
+                        sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], BOARD_Y + 8,  BOARD_X + 21);
+                        sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], BOARD_Y + 11, BOARD_X + 21);
+                        sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], BOARD_Y + 14, BOARD_X + 21);
+                    } else {
+                        hold ^= mino->type;
+                        mino->type ^= hold;
+                        hold ^= mino->type;
+                        mino_reset(mino, mino->type);
+                    }
+                    sprite_draw_yx(sprites, &sprite_data[hold], 7, 1);
+                    hold_available = false;
+                    mino_render(board_win, mino, '1');
+                    wnoutrefresh(board_win);
+                } else {
+                    // flash hold mino
+                }
+                break;
             case 'q':
                 delwin(board_win);
                 endwin();
                 printf("\n");
                 printf("----------debug------------\n");
-                row_t *current_row;
+                
                 row_iterator(NULL, 1);
                 for (int i = 0; i < 20; i++) {
                     current_row = row_iterator(board->head, 0); // sll iteration
                     if (current_row == NULL) {break;}
-                    printf("%d: ", i);
+                    printf("%2d: ", i);
                     for (int j = 0; j < 10; j++) {
                         if (current_row != NULL) {
                             printf("%d", current_row->data[j]);
@@ -240,7 +245,8 @@ int main() {
                 free(board);
                 return 0;
             case '1':
-                main(); // totally professional clean 10x vibes are on.
+                first_hold = true;
+                main(); // totally professional clean 100x vibes are on.
         }
         if (g_gravity_timer < 0) {    
             g_gravity_timer = 500;
