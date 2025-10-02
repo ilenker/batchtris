@@ -279,7 +279,7 @@ int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
             doupdate();
             return SUCCESS_UPDATE;
         case SOFT_DROP:   
-            return mino_resolve_motion(board, mino, GRAVITY);
+            while (mino_resolve_motion(board, mino, GRAVITY) != 3){} // Fall till obstacle
         default:
             return BETS_ARE_OFF;
     }

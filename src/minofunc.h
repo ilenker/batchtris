@@ -8,17 +8,19 @@ typedef enum GlobalGameState {
     INPUT_MOVES,
     EXECUTE_MOVES,
     RESULTS,
-} g_state_t;
+    CLASSIC_TETRIS,
+} game_state_t;
 
 typedef enum MinoMotion {
-    GRAVITY,
-    MOVE_LEFT,
-    MOVE_RIGHT,
-    ROTATE_CW,
-    ROTATE_CCW,
-    ROTATE_180,
-    HARD_DROP,
-    SOFT_DROP
+    ROTATE_CW = 0,
+    ROTATE_CCW = 1,
+    ROTATE_180 = 2,
+    MOVE_LEFT = 3,
+    MOVE_RIGHT = 4,
+    HARD_DROP = 5,
+    SOFT_DROP = 6,
+    HOLD = 7,
+    GRAVITY = 8,    
 } motion_t;
 
 typedef enum Rotation {

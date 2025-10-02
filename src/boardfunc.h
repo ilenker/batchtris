@@ -4,7 +4,7 @@
 
 #define QUEUE_PREVIEW_LENGTH 5
 #define BOARD_Y 6
-#define BOARD_X 9
+#define BOARD_X 25
 
 typedef struct Row row_t;
 
