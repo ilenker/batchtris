@@ -2,40 +2,43 @@
 #include <stdlib.h>
 #include "boardfunc.h"
 #include "minofunc.h"
+#include "init_think_execute.h"
 
 #define __break {wclear(board->parent_window); board_render(board, board->parent_window); nodelay(board->parent_window, FALSE); 
 #define point__ refresh(); doupdate(); wgetch(board->parent_window); nodelay(board->parent_window, TRUE);}
 
-int bag_next(board_t *board) {
+int bag_next() {
     board->bag_index = (board->bag_index + 1) % 14;
     if (board->bag_index == 0){
-        bag_shuffle(&(board->bag)[7]);
+        bag_shuffle(7);
     } 
     if (board->bag_index == 7){
-        bag_shuffle(&(board->bag)[0]);
+        bag_shuffle(0);
     } 
     return board->bag[board->bag_index];
 }
 
-void bag_shuffle(int *bag) {
-    int l;
-    int r = 1;
+void bag_shuffle(int from_index) {
+    int l, r;
     int temp;
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 15; i++) {
         l = rand() % 7; 
+        r = 1;
         while (l == r) {
             r = rand() % 7; 
         }
-        temp = bag[l];
-        bag[l] = bag[r];
-        bag[r] = temp;
+        l += from_index;
+        r += from_index;
+        temp = board->bag[l];
+        board->bag[l] = board->bag[r];
+        board->bag[r] = temp;
     } 
 }
 
 
-int board_data_at_yx(board_t *board, int y, int x) {
-    row_t *current = board->head; // I justify this with: we accessed the first
-    y--;                         // index by getting the head, if i is now -1, just return
+int board_data_at_yx(int y, int x) {
+    row_t *current = board->head;
+    y--;                        
     while(y >= 0) {
         current = current->next;
         y--;
@@ -46,7 +49,7 @@ int board_data_at_yx(board_t *board, int y, int x) {
     return current->data[x];
 }
 
-void board_render(board_t *board, WINDOW *window) {
+void board_render() {
     row_t *current_row;
     char col;
     row_iterator(NULL, 1);
@@ -57,19 +60,19 @@ void board_render(board_t *board, WINDOW *window) {
         for (int x = 0; x < 10; x++) {
             col = current_row->data[x];
             if (col != 9) {
-                wattron(window, COLOR_PAIR(col));
-                mvwaddch(window, y, x * 2, 'x'); 
-                waddch(window, 'x'); 
+                wattron(board_win, COLOR_PAIR(col));
+                mvwaddch(board_win, y, x * 2, 'x'); 
+                waddch(board_win, 'x'); 
             } else {
-                wattron(window, COLOR_PAIR(8));
-                mvwaddch(window, y, x * 2, 'x'); 
-                waddch(window, '*'); 
+                wattron(board_win, COLOR_PAIR(8));
+                mvwaddch(board_win, y, x * 2, 'x'); 
+                waddch(board_win, '*'); 
             }
         }
     }
 }
 
-int row_process(board_t *board, int row, stackop_t operation) {
+int row_process(int row, stackop_t operation) {
     static int stack[4];  
     static int ptr = 0;
     static int min = 69;
@@ -79,14 +82,6 @@ int row_process(board_t *board, int row, stackop_t operation) {
             return ptr;
             break;
         case PUSH:
-            // For first push, just do it.           
-            // For 2, if greater than top, push      
-            //        else insert below               
-            // For 3... you know what. I'm just going
-            // to do head each one. Only if it's a 4-
-            // clear we do the efficient way. T-spins
-            // will be assumed contiguous, so we will
-            // implement that if we get there.(^=_=^)
             stack[ptr] = row;
             ptr++;
             if (row < min) {
@@ -99,7 +94,7 @@ int row_process(board_t *board, int row, stackop_t operation) {
             break;
         case CLEAR:
             if (ptr == 4) {
-                row_clear(board, min, 4); 
+                row_clear(min, 4); 
                 stack[0] = -2;
                 stack[1] = -2;
                 stack[2] = -2;
@@ -138,7 +133,7 @@ int row_process(board_t *board, int row, stackop_t operation) {
             if (ptr > 0) {
                 while (ptr > 0) { 
                     ptr--; 
-                    row_clear(board, stack[ptr], 1);          
+                    row_clear(stack[ptr], 1);          
                     stack[ptr] = -2;
                 }
                 ptr = 0;
@@ -155,8 +150,8 @@ int row_process(board_t *board, int row, stackop_t operation) {
     }
 }
 
-void row_clear(board_t *board, int fullrow, int n) {
-    row_t *pre_gap = row_at_index(board, fullrow - 1); 
+void row_clear(int fullrow, int n) {
+    row_t *pre_gap = row_at_index(fullrow - 1); 
     row_t *first_full_row = pre_gap->next;
     row_t *last_full_row;
 
@@ -178,9 +173,9 @@ void row_clear(board_t *board, int fullrow, int n) {
     board->head = first_full_row;
 }
 
-row_t *row_at_index(board_t *board, int i) {
-    row_t *current = board->head; // I justify this with: we accessed the first
-    i--;                         // index by getting the head, if i is now -1, just return
+row_t *row_at_index(int i) {
+    row_t *current = board->head;
+    i--;                        
     while(i >= 0) {
         current = current->next;
         i--;
@@ -211,7 +206,7 @@ row_t *row_iterator(row_t *head, int reset) {
     return current;
 }
 
-void board_init(board_t *board, char depth, char width) {
+void board_init(char depth, char width) {
     // TODO: refactor this function
     board->depth = depth;
     board->width = width;
@@ -224,8 +219,8 @@ void board_init(board_t *board, char depth, char width) {
     board->bag[4] = S; board->bag[11] = S;
     board->bag[5] = Z; board->bag[12] = Z;
     board->bag[6] = T; board->bag[13] = T;
-    bag_shuffle(board->bag);
-    bag_shuffle(&board->bag[7]);
+    bag_shuffle(0);
+    bag_shuffle(7);
 
     row_t *current_row;
     row_iterator(NULL, 1);
@@ -243,7 +238,7 @@ void board_init(board_t *board, char depth, char width) {
     }
 }
 
-void board_init_sll(board_t *board) {
+void board_init_sll() {
     // TODO: refactor this function
     #define I_will_not_encourage_others_to_fly = calloc(1, sizeof(row_t));
     row_t *row_0  I_will_not_encourage_others_to_fly
@@ -291,7 +286,7 @@ void board_init_sll(board_t *board) {
     board->head = row_0;
 }
 
-void bag_render(board_t *board, WINDOW* queuewindow) {
+void bag_render() {
     for (int i = 0; i < QUEUE_PREVIEW_LENGTH; i++) {
     } 
 }

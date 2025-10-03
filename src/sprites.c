@@ -1,12 +1,11 @@
 #include <ncurses.h>
 #include "sprites.h"
-#include "minofunc.h"
 
 void sprite_draw_yx(WINDOW *sprites, sprite_t *s, int y, int x) {
     prefresh(sprites, s->memy, s->memx, y, x, y + s->height - 1, x + s->width - 1);                          
 }
 
-void sprites_minos_init(WINDOW *sprites, sprite_t *sprite_data) {
+void sprites_minos_init(WINDOW *sprites, sprite_t sprite_data[]) {
     int sprite_height = 2;
 
     // I
@@ -70,4 +69,5 @@ void sprites_minos_init(WINDOW *sprites, sprite_t *sprite_data) {
         sprite_data[i].height = 2;
         sprite_data[i].width = 8;
     }
+    return;
 }

@@ -3,11 +3,9 @@
 #include <ncurses.h>
 
 #define QUEUE_PREVIEW_LENGTH 5
-#define BOARD_Y 6
-#define BOARD_X 25
 
 typedef struct Row row_t;
-
+ 
 typedef enum StackOperation {
     PUSH,
     POP,
@@ -33,13 +31,13 @@ typedef struct Row {
     int count;
 } row_t;
 
-void board_init(board_t *board, char depth, char width);
-void board_render(board_t *board, WINDOW *window);
-int row_process(board_t *board, int index, stackop_t operation);
-row_t *row_at_index(board_t *board, int i);
+void board_init(char depth, char width);
+void board_render();
+int row_process(int index, stackop_t operation);
+row_t *row_at_index(int i);
 row_t *row_iterator(row_t *head, int reset);
-void board_init_sll(board_t *board);
-void row_clear(board_t *board, int row, int count);
-int board_data_at_yx(board_t *board, int y, int x);
-int bag_next(board_t *board);
-void bag_shuffle(int *bag);
+void board_init_sll();
+void row_clear(int row, int count);
+int board_data_at_yx(int y, int x);
+int bag_next();
+void bag_shuffle(int from_index);
