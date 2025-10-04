@@ -319,11 +319,13 @@ game_state_t input_moves() {
         case ' ':
             input_sequence[seq_index].motion = HARD_DROP;
             attron(COLOR_PAIR(12));
-            mvprintw(BOARD_Y + bag_cursor,  BOARD_X + 22, "_____");
+            mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "╭────────╮");
+            mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "╰────────╯");
             bag_cursor+=3;
             x_limit = 0;
             attron(COLOR_PAIR(9));
-            mvprintw(BOARD_Y + bag_cursor,  BOARD_X + 22, "  \\/");
+            mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "╭────────╮");
+            mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "╰────────╯");
             wnoutrefresh(input_move_window);
             hold_available = true;
             seq_index++;
@@ -339,18 +341,26 @@ game_state_t input_moves() {
         default:
             break;
     }
+    mvwprintw(debug_window, 1, 0, "seq_index: %d", seq_index);
+    mvwprintw(debug_window, 2, 0, "mv[s-1]: %s", mn[input_sequence[seq_index - 1].motion]);
+    wnoutrefresh(debug_window);
     if (seq_index > 0) {
         mvwprintw(input_move_window, seq_index, 1,
                   "%d: %s\t(%2d)", seq_index, mn[input_sequence[seq_index - 1].motion],
                   input_sequence[seq_index - 1].count + 1);
-        wattron(input_move_window, COLOR_PAIR(board->bag[piece_count + board->bag_index] + 16));
+        wattron(input_move_window, COLOR_PAIR(board->bag[(piece_count + board->bag_index) % 14] + 16));
     }
     wnoutrefresh(input_move_window);
     wnoutrefresh(board_win);
     debug_display(g_debug_verbosity);
     if (piece_count == 4) {
-        mvprintw(BOARD_Y + bag_cursor,  BOARD_X + 22, "_____");
-        mvprintw(BOARD_Y - 1, BOARD_X + 6, "!execute!");
+        attron(COLOR_PAIR(12));
+        mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "╭────────╮");
+        mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "╰────────╯");
+        attron(COLOR_PAIR(9));
+        mvprintw(BOARD_Y - 3, BOARD_X + 4, "╭─────────╮");
+        mvprintw(BOARD_Y - 2, BOARD_X + 4, "│!execute!│");
+        mvprintw(BOARD_Y - 1, BOARD_X + 4, "╰─────────╯");
         wnoutrefresh(board_win);
         wnoutrefresh(stdscr);
         nodelay(board_win, true);
@@ -376,7 +386,7 @@ game_state_t execute_moves() {
               input_sequence[seq_index].count + 1);
     wnoutrefresh(execute_move_window);
     doupdate();
-    napms(150);
+    napms(50);
     switch (input) {                    
         case ROTATE_CCW:                          
             mino_render('0');

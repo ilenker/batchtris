@@ -55,12 +55,18 @@ int main() {
     mvprintw(BOARD_Y + 21, BOARD_X, "      ╰──────╯      ");
     nodelay(board_win, false);
     nodelay(stdscr, false);
-    mvprintw(BOARD_Y - 1, BOARD_X + 6, " !think! ");
+ //╭────╮
+ //│test│  
+ //╰────╯
+    mvprintw(BOARD_Y - 3, BOARD_X + 4, "╭─────────╮");
+    mvprintw(BOARD_Y - 2, BOARD_X + 4, "│ !think! │");
+    mvprintw(BOARD_Y - 1, BOARD_X + 4, "╰─────────╯");
     wnoutrefresh(board_win);
     wnoutrefresh(input_move_window);
     doupdate();
     werase(input_move_window);
-    mvprintw(BOARD_Y + 4,  BOARD_X + 22, "  \\/");
+    mvprintw(BOARD_Y + 4,  BOARD_X + 20, "╭────────╮");
+    mvprintw(BOARD_Y + 7,  BOARD_X + 20, "╰────────╯");
 
  //╭────╮
  //│test│  
