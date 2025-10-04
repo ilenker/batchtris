@@ -48,6 +48,12 @@ typedef struct Event {
     int length;
 } event_t;
 
+typedef struct Stats {
+    unsigned int pc;
+    float kpp;
+    float pps;
+} stats_t;
+
 void ui_make_message(WINDOW *window, char *msg, int y, int x);
 game_state_t mode_select();
 game_state_t classic_tetris();
@@ -70,11 +76,12 @@ extern game_state_t GAME_STATE;
 extern shape_t hold;
 extern char g_debug_verbosity;
 extern int g_gravity_timer;
+extern stats_t stats;
 
 extern sprite_t sprite_data[16];
 
 // input loop stuff 
-extern motion_t input_sequence[64];
+extern game_input_t input_sequence[64];
 extern int seq_index; 
 extern int seq_len; 
 extern int piece_count;

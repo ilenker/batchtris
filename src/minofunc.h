@@ -14,6 +14,11 @@ typedef enum MinoMotion {
     GRAVITY = 8,    
 } motion_t;
 
+typedef struct GameInput {
+    motion_t motion;
+    int count;
+} game_input_t;
+
 typedef enum Rotation {
     r270 = -1,
     r90 = 1,

@@ -13,11 +13,13 @@ WINDOW *board_win;
 WINDOW *sprites;
 WINDOW *input_move_window;
 WINDOW *execute_move_window;
+WINDOW *debug_window;
 board_t *board;
 mino_t *mino;
 
 void init_think_execute() {
     //___________INIT___________//
+    setlocale(LC_ALL, "");
     initscr();
     cbreak();
     noecho();
@@ -32,6 +34,7 @@ void init_think_execute() {
     init_color(COLOR_ORANGE, 929, 500, 100);
     init_color(COLOR_PURPLE, 650, 20, 900);
     init_color(COLOR_GREY, 130, 130, 130);
+    init_color(COLOR_BLUE, 250, 320, 810);
     init_pair(1, COLOR_CYAN, COLOR_CYAN);            // I
     init_pair(2, COLOR_YELLOW, COLOR_YELLOW);       // O 
     init_pair(3, COLOR_BLUE, COLOR_BLUE);          // J
@@ -43,6 +46,15 @@ void init_think_execute() {
     init_pair(9, COLOR_WHITE, COLOR_BLACK);  // Text 
     init_pair(10, COLOR_WHITE, COLOR_GREY); // Text 
     init_pair(11, COLOR_GREY, COLOR_BLACK); // Text 
+    init_pair(12, COLOR_GREY, COLOR_GREY); // Text 
+        // Mino colours for text
+    init_pair(17, COLOR_CYAN, COLOR_BLACK);            // I
+    init_pair(18, COLOR_YELLOW, COLOR_BLACK);       // O 
+    init_pair(19, COLOR_BLUE, COLOR_BLACK);          // J
+    init_pair(20, COLOR_ORANGE, COLOR_BLACK);     // L
+    init_pair(21, COLOR_GREEN, COLOR_BLACK);      // S
+    init_pair(22, COLOR_RED, COLOR_BLACK);         // Z
+    init_pair(23, COLOR_PURPLE, COLOR_BLACK);  // T
     wbkgd(stdscr, COLOR_PAIR(10));
 
            /* BOARD WINDOW INIT */
@@ -77,15 +89,20 @@ void init_think_execute() {
     sprites = newpad(16, 16); 
 
          /* More windows testing here rework later yes */
-    input_move_window = newwin(20, 16, BOARD_Y, BOARD_X + 30); 
+    input_move_window = newwin(20, 20, BOARD_Y, BOARD_X + 30); 
     wattron(input_move_window, COLOR_PAIR(9));
     scrollok(input_move_window , 0);
     leaveok(input_move_window , 1);
     nodelay(input_move_window , 1);
-    execute_move_window = newwin(20, 16, BOARD_Y, BOARD_X - 17);
+    execute_move_window = newwin(20, 20, BOARD_Y, BOARD_X - 21);
     wattron(execute_move_window, COLOR_PAIR(9));
     scrollok(execute_move_window , 0);
     leaveok(execute_move_window , 1);
     nodelay(execute_move_window , 1);
 
+    debug_window = newwin(10, 20, BOARD_Y + board->depth + 1, BOARD_X);
+    wattron(debug_window, COLOR_PAIR(9));
+    scrollok(debug_window, 0);
+    leaveok(debug_window, 1);
+    nodelay(debug_window, 1);
 }

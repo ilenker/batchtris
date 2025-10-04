@@ -13,13 +13,14 @@
 game_state_t GAME_STATE;
 int state_update;
 char input;
+stats_t stats;
 
 bool hold_available;
 bool first_hold;
 shape_t hold;
 int g_gravity_timer;
 
-motion_t input_sequence[64];
+game_input_t input_sequence[64];
 int seq_index;
 int seq_len;
 int piece_count;
@@ -34,6 +35,10 @@ void game_variables_init() {
     GAME_STATE = MENU;
     hold_available = true;
     first_hold = true;
+    input = -1;
+    stats.pc = 0;
+    stats.kpp = 0.0f;
+    stats.pps = 0.0f;
 
     // Classic Specific
     g_gravity_timer = 500;
@@ -232,145 +237,159 @@ game_state_t classic_tetris() {
     return CLASSIC_TETRIS;
 }
 
-            /* qwfpinput */
+                /* qwfpinput */
 game_state_t input_moves() {
-        static int _foo = 4;
-        static int x_limit = 0;
-        input = getch();            
-        switch (input) {                    
-            case 'R':                          
-            case 'r':                          
-                input_sequence[seq_index] = ROTATE_CCW;
-                seq_index++;
+    static int bag_cursor = 4;
+    static int x_limit = 0;
+    flushinp();
+    input = getch();            
+    mvprintw(0, 0, "%c", input);
+    refresh();
+    doupdate();
+    switch (input) {                    
+        case 'R':                          
+        case 'r':                          
+            input_sequence[seq_index].motion = ROTATE_CCW;
+            seq_index++;
+            break;
+        case 'S':                           
+        case 's':                           
+            input_sequence[seq_index].motion = ROTATE_CW;
+            seq_index++;
+            break;
+        case 'T':                            
+        case 't':                            
+            input_sequence[seq_index].motion = ROTATE_180;
+            seq_index++;
+            break;
+        case 'H':                             
+        case 'h':                             
+            input_sequence[seq_index].motion = MOVE_LEFT;
+            if (input_sequence[seq_index - 1].motion == MOVE_LEFT) {
+                input_sequence[seq_index - 1].count++;
                 break;
-            case 'S':                           
-            case 's':                           
-                input_sequence[seq_index] = ROTATE_CW;
-                seq_index++;
+            } 
+            seq_index++;
+            break;
+        case ':':
+            input_sequence[seq_index].motion = MOVE_RIGHT;
+            if (input_sequence[seq_index - 1].motion == MOVE_RIGHT) {
+                input_sequence[seq_index - 1].count++;
                 break;
-            case 'T':                            
-            case 't':                            
-                input_sequence[seq_index] = ROTATE_180;
-                seq_index++;
-                break;
-            case 'H':                             
-            case 'h':                             
-                if (x_limit > -8) {
-                    input_sequence[seq_index] = MOVE_LEFT;
-                    seq_index++;
-                    x_limit--;
-                }
-                break;
-            case ':':
-                if (x_limit < 8) {
-                    input_sequence[seq_index] = MOVE_RIGHT;
-                    seq_index++;
-                    x_limit++;
-                }
-                break;
-            case 'Z':
-            case 'z':
-                input_sequence[seq_index] = SOFT_DROP;
-                seq_index++;
-                break;
-            case 'A':
-            case 'a':
-                input_sequence[seq_index] = HOLD;
-                seq_index++;
-                if (hold_available) {
-                    mino_render('0');
-                    if (first_hold) {
-                        hold = mino->type;
-                        mino_reset(bag_next());
-                        first_hold = false;
-                        sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], BOARD_Y + 5,  BOARD_X + 21);
-                        sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], BOARD_Y + 8,  BOARD_X + 21);
-                        sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], BOARD_Y + 11, BOARD_X + 21);
-                        sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], BOARD_Y + 14, BOARD_X + 21);
-                    } else {
-                        hold ^= mino->type;
-                        mino->type ^= hold;
-                        hold ^= mino->type;
-                        mino_reset(mino->type);
-                    }
-                    sprite_draw_yx(sprites, &sprite_data[hold], 7, 1);
-                    hold_available = false;
-                    x_limit = 0;
-                    mino_render('1');
-                    wnoutrefresh(board_win);
+            } 
+            seq_index++;
+            break;
+        case 'Z':
+        case 'z':
+            input_sequence[seq_index].motion = SOFT_DROP;
+            seq_index++;
+            break;
+        case 'A':
+        case 'a':
+            input_sequence[seq_index].motion = HOLD;
+            seq_index++;
+            if (hold_available) {
+                mino_render('0');
+                if (first_hold) {
+                    hold = mino->type;
+                    mino_reset(bag_next());
+                    first_hold = false;
+                    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]],
+                                   BOARD_Y + 5,  BOARD_X + 21);
+                    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]],
+                                   BOARD_Y + 8,  BOARD_X + 21);
+                    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]],
+                                   BOARD_Y + 11, BOARD_X + 21);
+                    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]],
+                                   BOARD_Y + 14, BOARD_X + 21);
                 } else {
-                    // flash hold mino
+                    hold ^= mino->type;
+                    mino->type ^= hold;
+                    hold ^= mino->type;
+                    mino_reset(mino->type);
                 }
-                break;
-            case ' ':
-                input_sequence[seq_index] = HARD_DROP;
-                mvprintw(BOARD_Y + _foo,  BOARD_X + 22, "_____");
-                _foo+=3;
+                sprite_draw_yx(sprites, &sprite_data[hold], 7, 1);
+                hold_available = false;
                 x_limit = 0;
-                mvprintw(BOARD_Y + _foo,  BOARD_X + 22, "  \\/");
-                wnoutrefresh(input_move_window);
-                hold_available = true;
-                seq_index++;
-                piece_count++;
-                break;
-            case 'q':
-                delwin(board_win);
-                endwin();
-                printf("\n");
-                printf("----------debug------------\n");
-                row_iterator(NULL, 1);
-                for (int i = 0; i < 20; i++) {
-                    row_iterator_index = row_iterator(board->head, 0); // sll iteration
-                    if (row_iterator_index == NULL) {break;}
-                    printf("%2d: ", i);
-                    for (int j = 0; j < 10; j++) {
-                        printf("%d", row_iterator_index->data[j]);
-                    }
-                    printf("\n");
-                }
-                //free(first_seq);
-                free(mino);
-                free(board);
-                return 0;
-            case '1':
-                break;
-            default:
-                break;
-        }
-            if (seq_index > 0 && (input_sequence[seq_index - 1] == MOVE_LEFT ||
-                                  input_sequence[seq_index - 1] == MOVE_RIGHT  )) {
-                mvwprintw(input_move_window, seq_index - x_limit, 1,
-                          "%d: %s", seq_index, mn[input_sequence[seq_index - 1]]);
+                mino_render('1');
+                wnoutrefresh(board_win);
             } else {
-            mvwprintw(input_move_window, seq_index, 1,
-                      "%d: %s", seq_index, mn[input_sequence[seq_index - 1]]);
-        }
-
-        wnoutrefresh(input_move_window);
+                // flash hold mino
+            }
+            break;
+        case ' ':
+            input_sequence[seq_index].motion = HARD_DROP;
+            attron(COLOR_PAIR(12));
+            mvprintw(BOARD_Y + bag_cursor,  BOARD_X + 22, "_____");
+            bag_cursor+=3;
+            x_limit = 0;
+            attron(COLOR_PAIR(9));
+            mvprintw(BOARD_Y + bag_cursor,  BOARD_X + 22, "  \\/");
+            wnoutrefresh(input_move_window);
+            hold_available = true;
+            seq_index++;
+            piece_count++;
+            break;
+        case 'q':
+            delwin(board_win);
+            endwin();
+            printf("\n");
+            printf("----------debug------------\n");
+            row_iterator(NULL, 1);
+            for (int i = 0; i < 20; i++) {
+                row_iterator_index = row_iterator(board->head, 0); // sll iteration
+                if (row_iterator_index == NULL) {break;}
+                printf("%2d: ", i);
+                for (int j = 0; j < 10; j++) {
+                    printf("%d", row_iterator_index->data[j]);
+                }
+                printf("\n");
+            }
+            //free(first_seq);
+            free(mino);
+            free(board);
+            return 0;
+        case '1':
+            break;
+        default:
+            break;
+    }
+    if (seq_index > 0) {
+        mvwprintw(input_move_window, seq_index, 1,
+                  "%d: %s\t(%2d)", seq_index, mn[input_sequence[seq_index - 1].motion],
+                  input_sequence[seq_index - 1].count + 1);
+        wattron(input_move_window, COLOR_PAIR(board->bag[piece_count + board->bag_index] + 16));
+    }
+    wnoutrefresh(input_move_window);
+    wnoutrefresh(board_win);
+    debug_display(g_debug_verbosity);
+    if (piece_count == 4) {
+        mvprintw(BOARD_Y + bag_cursor,  BOARD_X + 22, "_____");
+        mvprintw(BOARD_Y - 1, BOARD_X + 6, "!execute!");
         wnoutrefresh(board_win);
-        debug_display(g_debug_verbosity);
-        if (piece_count == 4) {
-            mvprintw(BOARD_Y + _foo,  BOARD_X + 22, "_____");
-            mvprintw(BOARD_Y - 1, BOARD_X + 6, "!execute!");
-            wnoutrefresh(board_win);
-            wnoutrefresh(stdscr);
-            nodelay(board_win, true);
-            nodelay(stdscr, true);
-            doupdate();
-            seq_len = seq_index ;
-            seq_index = 0;
-            GAME_STATE = EXECUTE_MOVES;
-            return EXECUTE_MOVES;
-        }
+        wnoutrefresh(stdscr);
+        nodelay(board_win, true);
+        nodelay(stdscr, true);
         doupdate();
+        seq_len = seq_index ;
+        seq_index = 0;
+        bag_cursor = 4;
+        GAME_STATE = EXECUTE_MOVES;
+        wattron(execute_move_window, COLOR_PAIR(board->bag[board->bag_index] + 16));
+        return EXECUTE_MOVES;
+    }
+    doupdate();
     return INPUT_MOVES;
 }
 
             /* qwfpexecute */
 game_state_t execute_moves() {
     static int _i = 0;
-    input = input_sequence[seq_index];            
-    mvwprintw(execute_move_window, 1 + _i++, 1, "%d: %s", _i + 1, mn[input_sequence[seq_index]]);
+    input = input_sequence[seq_index].motion;            
+    wattron(execute_move_window, COLOR_PAIR(board->bag[board->bag_index] + 16));
+    mvwprintw(execute_move_window, seq_index + 1, 1,
+              "%d: %s\t(%2d)", seq_index + 1, mn[input_sequence[seq_index].motion],
+              input_sequence[seq_index].count + 1);
     wnoutrefresh(execute_move_window);
     doupdate();
     napms(150);
@@ -397,44 +416,30 @@ game_state_t execute_moves() {
             seq_index++;
             break;
         case MOVE_LEFT:                             
-            mino_render('0');
-            mino_resolve_motion(MOVE_LEFT);
-            mino_render('1');
-            wnoutrefresh(board_win);
-            doupdate();
-            napms(100);
-            seq_index++;
-            while (input_sequence[seq_index] == MOVE_LEFT) {
+            while (input_sequence[seq_index].count >= 0) {
                 mino_render('0');
                 mino_resolve_motion(MOVE_LEFT);
                 mino_render('1');
                 wnoutrefresh(board_win);
                 doupdate();
-                napms(1);
-                seq_index++;
+                napms(50);
+                input_sequence[seq_index].count--;
             }
-            mino_render('1');
-            wnoutrefresh(board_win);
+            seq_index++;
             break;
         case MOVE_RIGHT:
-            mino_render('0');
-            mino_resolve_motion(MOVE_RIGHT);
-            mino_render('1');
-            wnoutrefresh(board_win);
-            doupdate();
-            napms(100);
-            seq_index++;
-            while (input_sequence[seq_index] == MOVE_RIGHT) {
+            while (input_sequence[seq_index].count >= 0) {
                 mino_render('0');
                 mino_resolve_motion(MOVE_RIGHT);
                 mino_render('1');
                 wnoutrefresh(board_win);
                 doupdate();
-                napms(1);
-                seq_index++;
+                napms(50);
+                mino_render('1');
+                wnoutrefresh(board_win);
+                input_sequence[seq_index].count--;
             }
-            mino_render('1');
-            wnoutrefresh(board_win);
+            seq_index++;
             break;
         case HARD_DROP:
             mino_render('0');
@@ -447,6 +452,7 @@ game_state_t execute_moves() {
             //sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], BOARD_Y + 14, BOARD_X + 21);
             wnoutrefresh(board_win);
             seq_index++;
+            stats.pc += 1;
             break;
         case SOFT_DROP:
             mino_render('0');
@@ -488,38 +494,40 @@ game_state_t execute_moves() {
             endwin();
             printf("\n");
             printf("----------debug------------\n");
-                
-                row_iterator(NULL, 1);
-                for (int i = 0; i < 20; i++) {
-                    row_iterator_index = row_iterator(board->head, 0); // sll iteration
-                    if (row_iterator_index == NULL) {break;}
-                    printf("%2d: ", i);
-                    for (int j = 0; j < 10; j++) {
-                        if (row_iterator_index != NULL) {
-                            printf("%d", row_iterator_index->data[j]);
-                        }
+
+            row_iterator(NULL, 1);
+            for (int i = 0; i < 20; i++) {
+                row_iterator_index = row_iterator(board->head, 0); // sll iteration
+                if (row_iterator_index == NULL) {break;}
+                printf("%2d: ", i);
+                for (int j = 0; j < 10; j++) {
+                    if (row_iterator_index != NULL) {
+                        printf("%d", row_iterator_index->data[j]);
                     }
-                    printf("\n");
                 }
-                //free(first_seq);
-                free(mino);
-                free(board);
-                return 0;
-            case '1':
-                first_hold = true;
-                break;
-            default:
-                break;
-        }
-        if (seq_index >= seq_len) {
-            GAME_STATE = INPUT_MOVES;
-            seq_index = 0;
-            mvprintw(BOARD_Y - 1, BOARD_X + 6, " !think! ");
-            mino_render('0');
-            werase(input_move_window);
-            doupdate();
-            return INPUT_MOVES;
-        }
+                printf("\n");
+            }
+            //free(first_seq);
+            free(mino);
+            free(board);
+            return 0;
+        case '1':
+            first_hold = true;
+            break;
+        default:
+            break;
+    }
+    if (seq_index >= seq_len) {
+        GAME_STATE = INPUT_MOVES;
+        seq_index = 0; 
+        seq_len = 0; 
+        piece_count = 0;
+        _i = 0;
+        mvprintw(BOARD_Y - 1, BOARD_X + 6, " !think! ");
+        mino_render('0');
+        doupdate();
+        return INPUT_MOVES;
+    }
     return EXECUTE_MOVES;
 }
 

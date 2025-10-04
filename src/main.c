@@ -3,16 +3,11 @@
 #include <unistd.h>
 #include <ncurses.h>
 #include <time.h>
-#include <math.h>
 
 #include "boardfunc.h"
 #include "sprites.h"
 #include "init_think_execute.h"
 #include "gameloops.h"
-
-float lerp(float a, float b, float f) {
-    return (a * (1.0 - f)) + (b * f);
-}
 
 int main() {
     time_t t;
@@ -37,49 +32,6 @@ int main() {
     refresh();
     doupdate();
 
-    float start, end, f, df, ddf;
-    start = 10.0f;
-    end = 30.0f;
-    f = 0.01f;
-    df = 0.005f;
-    ddf = 1.01f;
-
-    while (true) {
-        erase();
-        mvaddstr(10, lerp(start, end, f), "x");
-        mvprintw(12, 20, "%f", f);
-        df *= ddf;
-        f += df; 
-        if (f < 0.51f) ddf = 1.10f;
-        if (f > 0.49f) ddf = 0.90f;
-        wnoutrefresh(stdscr);
-        doupdate();
-        napms(17);
-    }
-
-    //_start_: ;
-    //df = 1.08f;
-    //while (lerp(start, end, f) <= end) {
-    //    erase();
-    //    mvaddstr(lerp(start, end, f), 10, "x");
-    //    f *= df; 
-    //    df += df/200; 
-    //    wnoutrefresh(stdscr);
-    //    doupdate();
-    //    napms(17);
-    //}
-    //df = 0.92f;
-    //while (lerp(start, end, f) >= start + 1.5f) {
-    //    erase();
-    //    mvaddstr(lerp(start, end, f), 10, "x");
-    //    f *= df; 
-    //    df -= df/200;
-    //    wnoutrefresh(stdscr);
-    //    doupdate();
-    //    napms(17);
-    //}
-    //goto _start_ ;
-
     _menu_: ;
     nodelay(stdscr, 0);
     while (GAME_STATE == MENU) {
@@ -99,19 +51,27 @@ int main() {
     }
 
     _inputmoves_: ; 
-    mvprintw(BOARD_Y + 20, BOARD_X, "L_L_L_L_^^L_L_L_L_L_");
+    mvprintw(BOARD_Y + 20, BOARD_X, "1 2 3 4 5 6 7 8 9 10");
+    mvprintw(BOARD_Y + 21, BOARD_X, "      ╰──────╯      ");
     nodelay(board_win, false);
     nodelay(stdscr, false);
     mvprintw(BOARD_Y - 1, BOARD_X + 6, " !think! ");
     wnoutrefresh(board_win);
     wnoutrefresh(input_move_window);
     doupdate();
+    werase(input_move_window);
     mvprintw(BOARD_Y + 4,  BOARD_X + 22, "  \\/");
+
+ //╭────╮
+ //│test│  
+ //╰────╯
 
     sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 0) % 14]], BOARD_Y + 5,  BOARD_X + 21);
     sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], BOARD_Y + 8,  BOARD_X + 21);
     sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], BOARD_Y + 11, BOARD_X + 21);
     sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], BOARD_Y + 14, BOARD_X + 21);
+
+    wattron(input_move_window, COLOR_PAIR(board->bag[board->bag_index] + 16));
 
     while (GAME_STATE == INPUT_MOVES) {
         input_moves();

@@ -13,6 +13,7 @@ extern WINDOW *board_win;
 extern WINDOW *sprites;
 extern WINDOW *input_move_window;
 extern WINDOW *execute_move_window;
+extern WINDOW *debug_window;
 extern board_t *board;
 extern mino_t *mino;
 
