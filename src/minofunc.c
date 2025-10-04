@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "minofunc.h"
 #include "boardfunc.h"
+#include "init_think_execute.h"
 
 #define __break {wclear(board->parent_window); board_render(board, board->parent_window); nodelay(board->parent_window, FALSE); 
 
@@ -14,72 +15,72 @@ const vec_t g_irotation_lut[4] = {
     {-1, 0}
 };
 
-
-void mino_reset(mino_t *new_mino, shape_t type) {
-    new_mino->type = type;
-    new_mino->dir = 0;
-    new_mino->y = 2;
-    new_mino->x = 4;
-    new_mino->falling = true;
+void mino_reset(shape_t type) {
+    mino->type = type;
+    mino->dir = 0;
+    mino->y = 2;
+    mino->x = 4;
+    mino->falling = true;
     switch (type) {
         case I:
-            new_mino->v[0].dy = 0; 
-            new_mino->v[0].dx = -1; 
-            new_mino->v[1].dy = 0;          
-            new_mino->v[1].dx = 1;       // oxoo
-            new_mino->v[2].dy = 0; 
-            new_mino->v[2].dx = 2; 
+            mino->v[0].dy = 0; 
+            mino->v[0].dx = -1; 
+            mino->v[1].dy = 0;          
+            mino->v[1].dx = 1;       // oxoo
+            mino->v[2].dy = 0; 
+            mino->v[2].dx = 2; 
             break;
         case O:
-            new_mino->v[0].dy = -1;      //  oo 
-            new_mino->v[0].dx = 0;      //   xo
-            new_mino->v[1].dy = -1; 
-            new_mino->v[1].dx = 1; 
-            new_mino->v[2].dy = 0; 
-            new_mino->v[2].dx = 1; 
+            mino->v[0].dy = -1;      //  oo 
+            mino->v[0].dx = 0;      //   xo
+            mino->v[1].dy = -1; 
+            mino->v[1].dx = 1; 
+            mino->v[2].dy = 0; 
+            mino->v[2].dx = 1; 
             break;
         case J:
-            new_mino->v[0].dy = -1;     // o
-            new_mino->v[0].dx = -1;    //  oxo
-            new_mino->v[1].dy = 0; 
-            new_mino->v[1].dx = -1; 
-            new_mino->v[2].dy = 0; 
-            new_mino->v[2].dx = 1; 
+            mino->v[0].dy = -1;     // o
+            mino->v[0].dx = -1;    //  oxo
+            mino->v[1].dy = 0; 
+            mino->v[1].dx = -1; 
+            mino->v[2].dy = 0; 
+            mino->v[2].dx = 1; 
             break;
         case L:
-            new_mino->v[0].dy = 0;      //   o
-            new_mino->v[0].dx = -1;    //  oxo
-            new_mino->v[1].dy = 0; 
-            new_mino->v[1].dx = 1; 
-            new_mino->v[2].dy = -1; 
-            new_mino->v[2].dx = 1; 
+            mino->v[0].dy = 0;      //   o
+            mino->v[0].dx = -1;    //  oxo
+            mino->v[1].dy = 0; 
+            mino->v[1].dx = 1; 
+            mino->v[2].dy = -1; 
+            mino->v[2].dx = 1; 
             break;
         case S:
-            new_mino->v[0].dy = 0; 
-            new_mino->v[0].dx = -1;     //  oo
-            new_mino->v[1].dy = -1;    //  ox
-            new_mino->v[1].dx = 0; 
-            new_mino->v[2].dy = -1; 
-            new_mino->v[2].dx = 1; 
+            mino->v[0].dy = 0; 
+            mino->v[0].dx = -1;     //  oo
+            mino->v[1].dy = -1;    //  ox
+            mino->v[1].dx = 0; 
+            mino->v[2].dy = -1; 
+            mino->v[2].dx = 1; 
             break;
         case Z:
-            new_mino->v[0].dy = -1; 
-            new_mino->v[0].dx = -1;     // oo
-            new_mino->v[1].dy = -1;    //   xo
-            new_mino->v[1].dx = 0; 
-            new_mino->v[2].dy = 0; 
-            new_mino->v[2].dx = 1; 
+            mino->v[0].dy = -1; 
+            mino->v[0].dx = -1;     // oo
+            mino->v[1].dy = -1;    //   xo
+            mino->v[1].dx = 0; 
+            mino->v[2].dy = 0; 
+            mino->v[2].dx = 1; 
             break;
         case T:
-            new_mino->v[0].dy = 0; 
-            new_mino->v[0].dx = -1;     // o
-            new_mino->v[1].dy = -1;    // oxo
-            new_mino->v[1].dx = 0; 
-            new_mino->v[2].dy = 0; 
-            new_mino->v[2].dx = 1; 
+            mino->v[0].dy = 0; 
+            mino->v[0].dx = -1;     // o
+            mino->v[1].dy = -1;    // oxo
+            mino->v[1].dx = 0; 
+            mino->v[2].dy = 0; 
+            mino->v[2].dx = 1; 
             break;
     }
 }
+
 mino_t *mino_init(shape_t type) {
     mino_t *new_mino = calloc(1, sizeof(mino_t));
     if (new_mino == NULL) {
@@ -157,19 +158,19 @@ mino_t *mino_init(shape_t type) {
 #define FAIL_NOUPDATE 3
 #define BETS_ARE_OFF -1
 
-int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
+int mino_resolve_motion(motion_t motion) {
     int peek = 0;
     switch (motion) {
         case GRAVITY:       
             if (mino->y + 1 > board->depth ||
-                board_data_at_yx(board, mino->y + 1, mino->x) != 9) {
+                board_data_at_yx(mino->y + 1, mino->x) != 9) {
                 mino->falling = false;
                 return FAIL_NOUPDATE;
             }
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy + 1;
                 int x_check = mino->x + mino->v[i].dx;    
-                int yx_check = board_data_at_yx(board, y_check, x_check);
+                int yx_check = board_data_at_yx(y_check, x_check);
                 if (y_check > board->depth || yx_check != 9) {
                     mino->falling = false;
                     return FAIL_NOUPDATE;
@@ -178,26 +179,26 @@ int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
             mino->y++;
             return SUCCESS_NOUPDATE;
         case MOVE_LEFT:
-            if (mino->x - 1 < 0 || board_data_at_yx(board, mino->y, mino->x - 1) != 9) {
+            if (mino->x - 1 < 0 || board_data_at_yx(mino->y, mino->x - 1) != 9) {
                 return FAIL_NOUPDATE;
             }
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx - 1;    
-                if (x_check < 0 || board_data_at_yx(board, y_check, x_check)!= 9) {
+                if (x_check < 0 || board_data_at_yx(y_check, x_check)!= 9) {
                     return FAIL_NOUPDATE;
                 }
             }
             mino->x--;
             return SUCCESS_NOUPDATE;
         case MOVE_RIGHT:
-            if (mino->x + 1 >= board->width || board_data_at_yx(board, mino->y, mino->x + 1) != 9) {
+            if (mino->x + 1 >= board->width || board_data_at_yx(mino->y, mino->x + 1) != 9) {
                 return FAIL_NOUPDATE;
             }
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx + 1;    
-                if (x_check >= board->width || board_data_at_yx(board, y_check, x_check) != 9) {
+                if (x_check >= board->width || board_data_at_yx(y_check, x_check) != 9) {
                     return FAIL_NOUPDATE;
                 }
             }
@@ -205,103 +206,103 @@ int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion) {
             return SUCCESS_NOUPDATE;
         // TODO: Rotation is more stable, bugs might still lurk
         case ROTATE_CW:
-            mino_rotate(mino, r270);
+            mino_rotate(r270);
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx;    
-                if (board_data_at_yx(board, y_check, x_check) != 9) {
-                    mino_rotate(mino, r90);
+                if (board_data_at_yx(y_check, x_check) != 9) {
+                    mino_rotate(r90);
                     return FAIL_NOUPDATE;
                 }
             }
             return SUCCESS_NOUPDATE;
         case ROTATE_CCW:
-            mino_rotate(mino, r90);
+            mino_rotate(r90);
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx;    
-                if (board_data_at_yx(board, y_check, x_check) != 9) {
-                    mino_rotate(mino, r270);
+                if (board_data_at_yx(y_check, x_check) != 9) {
+                    mino_rotate(r270);
                     return FAIL_NOUPDATE;
                 }
             }
             return SUCCESS_NOUPDATE;
         // TODO: Rotation is bugged I 180
         case ROTATE_180:
-            mino_rotate(mino, r180);
+            mino_rotate(r180);
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx;    
-                if (board_data_at_yx(board, y_check, x_check) != 9) {
-                    mino_rotate(mino, r180);
+                if (board_data_at_yx(y_check, x_check) != 9) {
+                    mino_rotate(r180);
                     return FAIL_NOUPDATE;
                 }
             }
             return SUCCESS_NOUPDATE;
         case HARD_DROP:
-            while (mino_resolve_motion(board, mino, GRAVITY) != 3){} // Fall till obstacle
+            while (mino_resolve_motion(GRAVITY) != 3){} // Fall till obstacle
             char new_limit = board->render_limit; 
 
                            /* ===Mino origin=== */
-            row_t *current_row = row_at_index(board, mino->y);
+            row_t *current_row = row_at_index(mino->y);
             current_row->data[mino->x] = mino->type;
             current_row->count++;
             if (mino->y < new_limit) {
                 new_limit = mino->y;
             }
             if (current_row->count == 10) {  // Row is full at xy
-                row_process(board, mino->y, PUSH); // ptr = 1
+                row_process(mino->y, PUSH); // ptr = 1
             }
 
                       /* ===Mino's 3x components=== */
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx;    
-                current_row = row_at_index(board, y_check);
+                current_row = row_at_index(y_check);
                 current_row->data[x_check] = mino->type;
                 current_row->count++;
 
                 if (current_row->count == 10) {
-                    row_process(board, y_check, PUSH);
+                    row_process(y_check, PUSH);
                 }
                 if (y_check < new_limit) {
                     new_limit = y_check;
                 }
             }
-            peek = row_process(board, -1, PEEK); 
+            peek = row_process(-1, PEEK); 
             if (peek != 0) {
                 new_limit -= peek;
-                row_process(board, -1, CLEAR);
+                row_process(-1, CLEAR);
             }
             board->render_limit = new_limit;
-            board_render(board, board->parent_window);
-            mino_reset(mino, bag_next(board));
+            board_render();
+            mino_reset(bag_next());
             doupdate();
             return SUCCESS_UPDATE;
         case SOFT_DROP:   
-            return mino_resolve_motion(board, mino, GRAVITY);
+            while (mino_resolve_motion(GRAVITY) != 3){} // Fall till obstacle
         default:
             return BETS_ARE_OFF;
     }
 }
 
 
-void mino_render(WINDOW * window, mino_t *mino, char ch) {
+void mino_render(char ch) {
     char col = ch == '0' ? 8 : mino->type;
-    wattron(window, COLOR_PAIR(col));               /* Set the color based on mino type */
-    mvwaddch(window, mino->y, mino->x * 2, ch);    /*    x*2 to stretch x res by 2     */
-    waddch(window, ch);                           /* print extra ch to fill the space */
+    wattron(board_win, COLOR_PAIR(col));               /* Set the color based on mino type */
+    mvwaddch(board_win, mino->y, mino->x * 2, ch);    /*    x*2 to stretch x res by 2     */
+    waddch(board_win, ch);                           /* print extra ch to fill the space */
 
     for (int i = 0; i < 3; i++) {      
-        mvwaddch(window,                          /* and do the same for each of */
+        mvwaddch(board_win,                          /* and do the same for each of */
                  mino->y + mino->v[i].dy,        /* minos individual components */
                 (mino->x + mino->v[i].dx) * 2,
                  ch);
-        waddch(window, ch);
+        waddch(board_win, ch);
     }
 }
 
-void mino_rotate(mino_t *mino, rot_t rot) {
+void mino_rotate(rot_t rot) {
     if (mino->type == O) {
         return;
     }
@@ -384,7 +385,7 @@ void rotate_vector_BKP(vec_t *v, char dir) {
     }
 }
 
-void debug_display(mino_t *mino, board_t *board, char verbosity) {
+void debug_display(char verbosity) {
     if (verbosity == 0) {
         return;
     }

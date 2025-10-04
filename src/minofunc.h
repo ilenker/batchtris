@@ -1,25 +1,23 @@
 #pragma once
 
-#include "boardfunc.h"
 #include <ncurses.h>
 
-typedef enum GlobalGameState {
-    MENU,
-    INPUT_MOVES,
-    EXECUTE_MOVES,
-    RESULTS,
-} g_state_t;
-
 typedef enum MinoMotion {
-    GRAVITY,
-    MOVE_LEFT,
-    MOVE_RIGHT,
-    ROTATE_CW,
-    ROTATE_CCW,
-    ROTATE_180,
-    HARD_DROP,
-    SOFT_DROP
+    ROTATE_CW = 0,
+    ROTATE_CCW = 1,
+    ROTATE_180 = 2,
+    MOVE_LEFT = 3,
+    MOVE_RIGHT = 4,
+    HARD_DROP = 5,
+    SOFT_DROP = 6,
+    HOLD = 7,
+    GRAVITY = 8,    
 } motion_t;
+
+typedef struct GameInput {
+    motion_t motion;
+    int count;
+} game_input_t;
 
 typedef enum Rotation {
     r270 = -1,
@@ -51,12 +49,12 @@ typedef struct Mino {
     bool falling;
 } mino_t;
 
-void mino_render(WINDOW *window, mino_t *mino, char ch);
-void mino_rotate(mino_t *mino, rot_t rot);
+void mino_render(char ch);
+void mino_rotate(rot_t rot);
 mino_t *mino_init(shape_t type);
-void mino_reset(mino_t *new_mino, shape_t type);
+void mino_reset(shape_t type);
 void vector_rotate(vec_t *v, rot_t rot);
-int mino_resolve_motion(board_t *board, mino_t *mino, motion_t motion);
+int mino_resolve_motion(motion_t motion);
 
-void debug_display(mino_t *mino, board_t *board, char verbosity);
+void debug_display(char verbosity);
 void test_minos();
