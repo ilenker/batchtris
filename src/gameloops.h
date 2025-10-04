@@ -85,4 +85,4 @@ extern game_input_t input_sequence[64];
 extern int seq_index; 
 extern int seq_len; 
 extern int piece_count;
-extern char *mn[8];
+extern char *mn[9];

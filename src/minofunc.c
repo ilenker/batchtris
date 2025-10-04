@@ -1,5 +1,5 @@
-#include <ncurses.h>
 #include <stdlib.h>
+#include <ncurses.h>
 #include "minofunc.h"
 #include "boardfunc.h"
 #include "init_think_execute.h"

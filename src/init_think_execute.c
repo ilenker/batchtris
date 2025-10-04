@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <locale.h>
 #include <ncurses.h>
 #include "boardfunc.h"
 #include "minofunc.h"

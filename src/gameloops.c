@@ -25,7 +25,7 @@ int seq_index;
 int seq_len;
 int piece_count;
 
-char *mn[8];
+char *mn[9];
 char g_debug_verbosity;
 sprite_t sprite_data[16];
 row_t *row_iterator_index;
@@ -56,6 +56,7 @@ void game_variables_init() {
     mn[5] = "HARD_DROP";
     mn[6] = "SOFT_DROP";
     mn[7] = "HOLD";
+    mn[8] = "No motion :(";
 
     // Other
     g_debug_verbosity = 0;
@@ -241,9 +242,7 @@ game_state_t classic_tetris() {
 game_state_t input_moves() {
     static int bag_cursor = 4;
     static int x_limit = 0;
-    flushinp();
     input = getch();            
-    mvprintw(0, 0, "%c", input);
     refresh();
     doupdate();
     switch (input) {                    
@@ -331,21 +330,7 @@ game_state_t input_moves() {
             piece_count++;
             break;
         case 'q':
-            delwin(board_win);
             endwin();
-            printf("\n");
-            printf("----------debug------------\n");
-            row_iterator(NULL, 1);
-            for (int i = 0; i < 20; i++) {
-                row_iterator_index = row_iterator(board->head, 0); // sll iteration
-                if (row_iterator_index == NULL) {break;}
-                printf("%2d: ", i);
-                for (int j = 0; j < 10; j++) {
-                    printf("%d", row_iterator_index->data[j]);
-                }
-                printf("\n");
-            }
-            //free(first_seq);
             free(mino);
             free(board);
             return 0;
@@ -384,7 +369,6 @@ game_state_t input_moves() {
 
             /* qwfpexecute */
 game_state_t execute_moves() {
-    static int _i = 0;
     input = input_sequence[seq_index].motion;            
     wattron(execute_move_window, COLOR_PAIR(board->bag[board->bag_index] + 16));
     mvwprintw(execute_move_window, seq_index + 1, 1,
@@ -397,23 +381,14 @@ game_state_t execute_moves() {
         case ROTATE_CCW:                          
             mino_render('0');
             mino_resolve_motion(ROTATE_CCW);
-            mino_render('1');
-            wnoutrefresh(board_win);
-            seq_index++;
             break;
         case ROTATE_CW:                           
             mino_render('0');
             mino_resolve_motion(ROTATE_CW);
-            mino_render('1');
-            wnoutrefresh(board_win);
-            seq_index++;
             break;
         case ROTATE_180:                            
             mino_render('0');
             mino_resolve_motion(ROTATE_180);
-            mino_render('1');
-            wnoutrefresh(board_win);
-            seq_index++;
             break;
         case MOVE_LEFT:                             
             while (input_sequence[seq_index].count >= 0) {
@@ -425,7 +400,6 @@ game_state_t execute_moves() {
                 napms(50);
                 input_sequence[seq_index].count--;
             }
-            seq_index++;
             break;
         case MOVE_RIGHT:
             while (input_sequence[seq_index].count >= 0) {
@@ -435,23 +409,13 @@ game_state_t execute_moves() {
                 wnoutrefresh(board_win);
                 doupdate();
                 napms(50);
-                mino_render('1');
-                wnoutrefresh(board_win);
                 input_sequence[seq_index].count--;
             }
-            seq_index++;
             break;
         case HARD_DROP:
             mino_render('0');
             state_update = mino_resolve_motion(HARD_DROP);
             hold_available = true;
-            mino_render('1');
-            //sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], BOARD_Y + 5,  BOARD_X + 21);
-            //sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], BOARD_Y + 8,  BOARD_X + 21);
-            //sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], BOARD_Y + 11, BOARD_X + 21);
-            //sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 4) % 14]], BOARD_Y + 14, BOARD_X + 21);
-            wnoutrefresh(board_win);
-            seq_index++;
             stats.pc += 1;
             break;
         case SOFT_DROP:
@@ -459,9 +423,6 @@ game_state_t execute_moves() {
             if (mino_resolve_motion(SOFT_DROP) == 3) {
                 wnoutrefresh(board_win);
             }
-            mino_render('1');
-            wnoutrefresh(board_win);
-            seq_index++;
             break;
         case HOLD:
             // TODO: fix hold
@@ -517,12 +478,17 @@ game_state_t execute_moves() {
         default:
             break;
     }
+    mino_render('1');
+    wnoutrefresh(board_win);
+
+    input_sequence[seq_index].motion = 8;
+    input_sequence[seq_index].count = 0;
+    seq_index++;
     if (seq_index >= seq_len) {
         GAME_STATE = INPUT_MOVES;
         seq_index = 0; 
         seq_len = 0; 
         piece_count = 0;
-        _i = 0;
         mvprintw(BOARD_Y - 1, BOARD_X + 6, " !think! ");
         mino_render('0');
         doupdate();
