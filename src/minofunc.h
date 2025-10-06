@@ -12,6 +12,7 @@ typedef enum MinoMotion {
     SOFT_DROP = 6,
     HOLD = 7,
     GRAVITY = 8,    
+    NO_MOTION = -1,
 } motion_t;
 
 typedef struct GameInput {
@@ -33,6 +34,7 @@ typedef enum ShapeType {
     S = 5,
     Z = 6,
     T = 7,
+    NOPIECE = 8,
 } shape_t;
 
 typedef struct Vector {
@@ -49,7 +51,7 @@ typedef struct Mino {
     bool falling;
 } mino_t;
 
-void mino_render(char ch);
+void mino_render(bool draw);
 void mino_rotate(rot_t rot);
 mino_t *mino_init(shape_t type);
 void mino_reset(shape_t type);

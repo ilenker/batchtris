@@ -63,7 +63,15 @@ void sprites_minos_init(WINDOW *sprites, sprite_t sprite_data[]) {
     mvwaddstr(sprites,     y_offset, 3,   "#.");
     mvwaddstr(sprites, 1 + y_offset, 1, "#.#.#.");
 
-    for (int i = 1; i <= 7; i++) {
+    // Blank
+    //  #
+    // ###
+    y_offset += sprite_height; 
+    wattrset(sprites, COLOR_PAIR(9));
+    mvwaddstr(sprites,     y_offset, 3, "#.#.#.#.");
+    mvwaddstr(sprites, 1 + y_offset, 1, "#.#.#.#.");
+
+    for (int i = 1; i <= 8; i++) {
         sprite_data[i].memy = (i - 1) * 2;
         sprite_data[i].memx = 0;
         sprite_data[i].height = 2;

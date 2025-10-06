@@ -287,15 +287,22 @@ int mino_resolve_motion(motion_t motion) {
 }
 
 
-void mino_render(char ch) {
-    char col = ch == '0' ? 9 : mino->type;
-    wattron(board_win, COLOR_PAIR(col));               /* Set the color based on mino type */
-    mvwaddch(board_win, mino->y, mino->x * 2, ch);    /*    x*2 to stretch x res by 2     */
-    waddch(board_win, ch);                           /* print extra ch to fill the space */
+void mino_render(bool draw) {
+    char ch;
+                
+    if (draw) {
+        ch = mino->type + '0';
+        wattron(board_win, COLOR_PAIR(mino->type));
+    } else {
+        ch = '0';
+        wattron(board_win, COLOR_PAIR(9));
+    }
+    mvwaddch(board_win, mino->y, mino->x * 2, ch);                    
+    waddch(board_win, ch);                                         
 
     for (int i = 0; i < 3; i++) {      
-        mvwaddch(board_win,                          /* and do the same for each of */
-                 mino->y + mino->v[i].dy,        /* minos individual components */
+        mvwaddch(board_win,                                         
+                 mino->y + mino->v[i].dy,                          
                 (mino->x + mino->v[i].dx) * 2,
                  ch);
         waddch(board_win, ch);
