@@ -36,7 +36,7 @@ void board_render();
 int row_process(int index, stackop_t operation);
 row_t *row_at_index(int i);
 row_t *row_iterator(row_t *head, int reset);
-void board_init_sll();
+void board_init_sll(bool rows_free);
 void row_clear(int row, int count);
 int board_data_at_yx(int y, int x);
 int bag_next();

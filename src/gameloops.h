@@ -21,6 +21,7 @@ typedef enum GlobalGameState {
     EXECUTE_MOVES,
     RESULTS,
     CLASSIC_TETRIS,
+    EXIT_THINK_EXECUTE,
 } game_state_t;
 
 
@@ -60,6 +61,7 @@ game_state_t classic_tetris();
 game_state_t input_moves();
 game_state_t execute_moves();
 void game_variables_init();
+void edit_board();
 
 typedef struct Sequence {
     event_t *frame[32];

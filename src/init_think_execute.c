@@ -17,6 +17,9 @@ WINDOW *execute_move_window;
 WINDOW *debug_window;
 board_t *board;
 mino_t *mino;
+int BOARD_Y;
+int BOARD_X;
+
 
 void init_think_execute() {
     //___________INIT___________//
@@ -29,12 +32,12 @@ void init_think_execute() {
     leaveok(stdscr, 1);
     curs_set(0);
 
-    // TODO: Rework color structure (don't use pairs for everything)
     // TODO: support 8 color terminals
     start_color();
+    init_color(COLOR_WHITE, 929, 808, 905);
     init_color(COLOR_ORANGE, 929, 500, 100);
     init_color(COLOR_PURPLE, 650, 20, 900);
-    init_color(COLOR_GREY, 130, 130, 130);
+    init_color(COLOR_GREY, 113, 113, 127);
     init_color(COLOR_BLUE, 250, 320, 810);
     init_pair(1, COLOR_CYAN, COLOR_CYAN);            // I
     init_pair(2, COLOR_YELLOW, COLOR_YELLOW);       // O 
@@ -43,33 +46,35 @@ void init_think_execute() {
     init_pair(5, COLOR_GREEN, COLOR_GREEN);      // S
     init_pair(6, COLOR_RED, COLOR_RED);         // Z
     init_pair(7, COLOR_PURPLE, COLOR_PURPLE);  // T
-    init_pair(8, COLOR_BLACK, COLOR_BLACK);   // Blank 
-    init_pair(9, COLOR_WHITE, COLOR_BLACK);  // Text 
+    init_pair(8, COLOR_WHITE, COLOR_BLACK);  // Text 
+    init_pair(9, COLOR_BLACK, COLOR_BLACK);   // Blank 
     init_pair(10, COLOR_WHITE, COLOR_GREY); // Text 
     init_pair(11, COLOR_GREY, COLOR_BLACK); // Text 
     init_pair(12, COLOR_GREY, COLOR_GREY); // Text 
         // Mino colours for text
-    init_pair(17, COLOR_CYAN, COLOR_BLACK);            // I
+    init_pair(17, COLOR_CYAN, COLOR_BLACK);          // I
     init_pair(18, COLOR_YELLOW, COLOR_BLACK);       // O 
-    init_pair(19, COLOR_BLUE, COLOR_BLACK);          // J
+    init_pair(19, COLOR_BLUE, COLOR_BLACK);        // J
     init_pair(20, COLOR_ORANGE, COLOR_BLACK);     // L
-    init_pair(21, COLOR_GREEN, COLOR_BLACK);      // S
-    init_pair(22, COLOR_RED, COLOR_BLACK);         // Z
+    init_pair(21, COLOR_GREEN, COLOR_BLACK);     // S
+    init_pair(22, COLOR_RED, COLOR_BLACK);      // Z
     init_pair(23, COLOR_PURPLE, COLOR_BLACK);  // T
-    wbkgd(stdscr, COLOR_PAIR(10));
+    wbkgd(stdscr, COLOR_PAIR(10) );
 
            /* BOARD WINDOW INIT */
+    BOARD_Y = LINES / 2 - 10;
+    BOARD_X = COLS / 2 - 10;
     board_win = newwin(20, 20, BOARD_Y, BOARD_X); // 20x20 board at y=6, x=6  
     scrollok(board_win, 0);
     leaveok(board_win, 1);
     nodelay(board_win, 1);
     wclear(stdscr);
-    wbkgd(board_win, COLOR_PAIR(11) | '_');
+    wbkgd(board_win, COLOR_PAIR(9) | '9');
     refresh();
 
     board = calloc(1, sizeof(board_t));
     board->parent_window = board_win;
-    board_init_sll();
+    board_init_sll(false);
 
     row_t *current_row;
     row_iterator(NULL, 1);
@@ -89,21 +94,31 @@ void init_think_execute() {
          /* SPRITE PAD INIT */
     sprites = newpad(16, 16); 
 
-         /* More windows testing here rework later yes */
-    input_move_window = newwin(20, 20, BOARD_Y, BOARD_X + 30); 
-    wattron(input_move_window, COLOR_PAIR(9));
+         /* THINK EXECUTE WINDOWS */
+    input_move_window = newwin(10, 9, BOARD_Y + 5, BOARD_X - 10); 
+    wattron(input_move_window, COLOR_PAIR(8));
     scrollok(input_move_window , 0);
     leaveok(input_move_window , 1);
     nodelay(input_move_window , 1);
-    execute_move_window = newwin(20, 20, BOARD_Y, BOARD_X - 21);
-    wattron(execute_move_window, COLOR_PAIR(9));
+    execute_move_window = newwin(10, 15, BOARD_Y + 5, BOARD_X + 30);
+    wattron(execute_move_window, COLOR_PAIR(8));
     scrollok(execute_move_window , 0);
     leaveok(execute_move_window , 1);
     nodelay(execute_move_window , 1);
 
     debug_window = newwin(10, 20, BOARD_Y + board->depth + 1, BOARD_X);
-    wattron(debug_window, COLOR_PAIR(9));
+    wattron(debug_window, COLOR_PAIR(8));
     scrollok(debug_window, 0);
     leaveok(debug_window, 1);
     nodelay(debug_window, 1);
+
+        /* UI BORDERS */
+    //╭────────╮
+    //╰────────╯                       // 0123456789abcdefghijkl
+    mvprintw(BOARD_Y -  3, BOARD_X + 0,     "╭─────────╮");
+    mvprintw(BOARD_Y -  2, BOARD_X + 0,     "│         │");
+    mvaddstr(BOARD_Y -  1, BOARD_X - 1,    "╭┴─────────┴─────────╮");
+    for (int i = 0; i < 20; i++)
+        mvaddstr(BOARD_Y + i, BOARD_X - 1, "│                    │");
+    mvaddstr(BOARD_Y + 20, BOARD_X - 1,    "╰────────────────────╯");
 }

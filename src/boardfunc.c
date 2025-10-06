@@ -61,12 +61,12 @@ void board_render() {
             col = current_row->data[x];
             if (col != 9) {
                 wattron(board_win, COLOR_PAIR(col));
-                mvwaddch(board_win, y, x * 2, 'x'); 
-                waddch(board_win, 'x'); 
+                mvwaddch(board_win, y, x * 2, col + '0'); 
+                waddch(board_win, col + '0'); 
             } else {
-                wattron(board_win, COLOR_PAIR(8));
-                mvwaddch(board_win, y, x * 2, 'x'); 
-                waddch(board_win, '*'); 
+                wattron(board_win, COLOR_PAIR(9));
+                mvwaddch(board_win, y, x * 2, col); 
+                waddch(board_win, col + '0'); 
             }
         }
     }
@@ -238,7 +238,7 @@ void board_init(char depth, char width) {
     }
 }
 
-void board_init_sll() {
+void board_init_sll(bool rows_free) {
     // TODO: refactor this function
     #define I_will_not_encourage_others_to_fly = calloc(1, sizeof(row_t));
     row_t *row_0  I_will_not_encourage_others_to_fly
@@ -284,11 +284,37 @@ void board_init_sll() {
     row_19->next = NULL;
 
     board->head = row_0;
+
+    if (rows_free == true) {
+        free(row_0 ); 
+        free(row_1 ); 
+        free(row_2 ); 
+        free(row_3 ); 
+        free(row_4 ); 
+        free(row_5 ); 
+        free(row_6 ); 
+        free(row_7 ); 
+        free(row_8 ); 
+        free(row_9 ); 
+        free(row_10); 
+        free(row_11); 
+        free(row_12); 
+        free(row_13); 
+        free(row_14); 
+        free(row_15); 
+        free(row_16); 
+        free(row_17); 
+        free(row_18); 
+        free(row_19); 
+    }
 }
 
 void bag_render() {
     for (int i = 0; i < QUEUE_PREVIEW_LENGTH; i++) {
     } 
+}
+void board_free_sll() {
+    // TODO: refactor this function
 }
 // Reverse a List
 //:'t+1,.g/^/m 't

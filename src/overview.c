@@ -1,6 +1,12 @@
 /*    (^=__=^)
  *    ~Overview~                      
  *                                    [complexity][time]  
+ *                                      
+ *  TODO: Fix Hold
+ *  TODO: Set controls / choose predefined schemes 
+ *  TODO: Test time limit mechanic for think/exec
+ *  TODO: Implement fail states
+ *  TODO: Map editor
  *       
  *  FUNDAMENTAL MECHANICS    
  *     |_scoring                      [medium]    [mid]
@@ -10,7 +16,7 @@
  *     |_plan phase:
  *     |     |_text interface
  *     |     |_based on finesse
- *     |     \_need rapid prototypes  く    
+ *     |     \_need rapid prototypes      
  *     |     
  *     |_execute phase: uses
  *       fundamentals, replay

@@ -288,7 +288,7 @@ int mino_resolve_motion(motion_t motion) {
 
 
 void mino_render(char ch) {
-    char col = ch == '0' ? 8 : mino->type;
+    char col = ch == '0' ? 9 : mino->type;
     wattron(board_win, COLOR_PAIR(col));               /* Set the color based on mino type */
     mvwaddch(board_win, mino->y, mino->x * 2, ch);    /*    x*2 to stretch x res by 2     */
     waddch(board_win, ch);                           /* print extra ch to fill the space */
@@ -389,10 +389,10 @@ void debug_display(char verbosity) {
     if (verbosity == 0) {
         return;
     }
-    attron(COLOR_PAIR(9));
+    attron(COLOR_PAIR(8));
     switch (verbosity) {
         case 3:
-            wattron(stdscr, COLOR_PAIR(9));
+            wattron(stdscr, COLOR_PAIR(8));
             row_iterator(NULL, 1);
             row_t *current_row;
             for (int y = 0; y < 20; y++) {
@@ -400,7 +400,7 @@ void debug_display(char verbosity) {
                 if (current_row == NULL) {
                     break;
                 } 
-                mvprintw(6 + y, 0, "%2d:%2d", y, current_row->count);
+                mvprintw(BOARD_Y + y, BOARD_X - 6, "%2d:%2d", y, current_row->count);
             }
             row_iterator(NULL, 1);
             break;
