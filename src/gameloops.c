@@ -49,7 +49,7 @@ void game_variables_init() {
     seq_index = 0; 
     seq_len = 0; 
     piece_count = 0;
-    execution_speed = 100;
+    execution_speed = 50;
     mn[0] = "↩";
     mn[1] = "↪";
     mn[2] = "π";
@@ -64,47 +64,9 @@ void game_variables_init() {
     g_debug_verbosity = 0;
 }
 
-            /* qwfpmode */
-game_state_t mode_select() {
-    static unsigned int select = 0;
-    mvprintw(12, 5 + 5, "!think!");
-    mvprintw(14, 5, "block stacker game");
-
-    while (input != ' ') {
-        input = getch();
-        if (input == 'e') {
-            select = (select - 1) % 2;
-        }
-        if (input == 'n') {
-            select = (select + 1) % 2;
-        }
-        if (select == 0) {
-            standout();
-            mvprintw(12, 5 + 5, "!think!");
-            standend();
-            mvprintw(14, 5, "block stacker game");
-        }
-        if (select == 1) {
-            mvprintw(12, 5 + 5, "!think!");
-            standout();
-            mvprintw(14, 5, "block stacker game");
-            standend();
-        }
-    }
-    if (select == 0) {
-        return INPUT_MOVES;
-    }
-    if (select == 1) {
-        return CLASSIC_TETRIS;
-    }
-    return MENU;
-}
 
             /* qwfpclassic */
 game_state_t classic_tetris() {
-    #define _dirty_code sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 
-    #define _naughty(index) _dirty_code index + 1) % 14]], BOARD_Y + 5 + (index * 3),  BOARD_X + 21)
-    #define _render_bag() _naughty(0); _naughty(1); _naughty(2); _naughty(3)
 
     input = getch(); 
     switch (input) {                    
@@ -147,7 +109,7 @@ game_state_t classic_tetris() {
             state_update = mino_resolve_motion(HARD_DROP);
             hold_available = true;
             mino_render(1);
-            _render_bag();
+            bag_q_render(1, 4);
             wnoutrefresh(board_win);
             break;
         case 'Z':
@@ -166,7 +128,7 @@ game_state_t classic_tetris() {
                 if (hold == NOPIECE) {
                     hold = mino->type;
                     mino_reset(bag_next());
-                    _render_bag();
+                    bag_q_render(1, 4);
                 } else {
                     hold ^= mino->type;
                     mino->type ^= hold;
@@ -177,9 +139,7 @@ game_state_t classic_tetris() {
                 hold_available = false;
                 mino_render(1);
                 wnoutrefresh(board_win);
-            } else {
-                // flash hold mino
-            }
+            } 
             break;
         case 'q':                   // TODO: This case segfaults, double free?
             board_init_sll(true); 
@@ -187,7 +147,7 @@ game_state_t classic_tetris() {
             free(board);
             endwin();
             printf("\033[?1003l\n"); // Disable mouse movement events, as l = low
-            return EXIT_THINK_EXECUTE;
+            return QUIT;
         case 'm':
             return MENU;
             break;
@@ -213,11 +173,10 @@ game_state_t classic_tetris() {
     //        timer++;
     //    }
     //}  
-    debug_display(g_debug_verbosity);
     if (state_update != SUCCESS_UPDATE) doupdate();
     state_update = BETS_ARE_OFF;
     napms(17);
-    return CLASSIC_TETRIS;
+    return CLASSIC;
 }
 
                 /* qwfpinput */
@@ -225,9 +184,8 @@ game_state_t input_moves() {
     static int bag_cursor = 4;
     static int x_limit = 0;
     static char *uc_width_adjust = "";
-    input = getch();            
     refresh();
-    doupdate();
+    input = getch();            
     switch (input) {                    
         case 'R':                          
         case 'r':                          
@@ -287,32 +245,22 @@ game_state_t input_moves() {
         case 'A':
         case 'a':
             if (hold_available) {
-                if (input_phase_hold == NOPIECE) {
-                    input_phase_hold = board->bag[(board->bag_index) % 14];
-                    sprite_draw_yx(sprites,
-                                   &sprite_data[8],
-                                   BOARD_Y + 1 + (bag_cursor),
-                                   BOARD_X + 21);
-                    attron(COLOR_PAIR(12));
-                    mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "├────────╮");
-                    mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "├────────╯");
-                    attron(COLOR_PAIR(8));
-                    mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "│");
-                    mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "│");
-                    bag_cursor += 3;
-                    mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "├────────╮");
-                    mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "├────────╯");
-                    piece_count++;
-                }
-                //sprite_draw_yx(sprites, &sprite_data[hold], BOARD_Y + 2, BOARD_X - 10);
-                hold_available = false;
                 wprintw(input_move_window, "H-");
-                wattron(input_move_window,
-                        COLOR_PAIR(16 + board->bag[(piece_count + 
-           /* significant whitespace */            (input_phase_hold == 8) +
-                                                    board->bag_index) % 14 ])
-                        );
-
+                sprite_draw_yx(sprites,   // Replace current piece on bag display with held piece
+                               &sprite_data[input_phase_hold],
+                               BOARD_Y + 1 + (bag_cursor),
+                               BOARD_X + 21);
+                if (input_phase_hold == NOPIECE) {
+                    input_phase_hold = board->bag[(board->bag_index + piece_count) % 14];
+                    piece_count++;
+                    wattron(input_move_window, COLOR_PAIR(16 + board->bag[(piece_count + 
+                                                          board->bag_index) % 14 ]));
+                    bag_cursor_render(&bag_cursor);
+                } else {
+                    wattron(input_move_window, COLOR_PAIR(input_phase_hold + 16));
+                    input_phase_hold = board->bag[(board->bag_index + piece_count) % 14];
+                }
+                hold_available = false;
                
                 wprintw(input_move_window, ">SWAP\n");
                 input_sequence[seq_index].motion = HOLD;
@@ -328,23 +276,14 @@ game_state_t input_moves() {
             piece_count++;
             wprintw(input_move_window, "!\n");
             input_sequence[seq_index].motion = HARD_DROP;
-
-            attron(COLOR_PAIR(12));
-            mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "├────────╮");
-            mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "├────────╯");
-            attron(COLOR_PAIR(8));
-            mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "│");
-            mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "│");
-            bag_cursor += 3;
-            mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "├────────╮");
-            mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "├────────╯");
-            wattron(input_move_window,
-                    COLOR_PAIR(board->bag[(piece_count + board->bag_index) % 14] + 16));
-            wnoutrefresh(input_move_window);
-
             hold_available = true;
             seq_index++;
             x_limit = 0;
+
+            bag_cursor_render(&bag_cursor);
+            wattron(input_move_window,
+                    COLOR_PAIR(board->bag[(piece_count + board->bag_index) % 14] + 16));
+            wnoutrefresh(input_move_window);
             break; 
         case 'q':
             board_init_sll(true);
@@ -352,17 +291,22 @@ game_state_t input_moves() {
             free(mino);
             endwin();
             printf("\033[?1003l\n"); // Disable mouse movement events, as l = low
-            return EXIT_THINK_EXECUTE;
+            return QUIT;
         case 'm':
             return MENU;
             break;
     }
 
     if (piece_count == 4) {
-        attron(COLOR_PAIR(12));
-        mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "╭────────╮");
-        mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "╰────────╯");
+        // UI Cleanup
+        attron(COLOR_PAIR(9));
+        mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "├────────╮");
+        mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "├────────╯");
         attron(COLOR_PAIR(8));
+        mvprintw(BOARD_Y + bag_cursor - 3,  BOARD_X + 20, "│");
+        mvprintw(BOARD_Y + bag_cursor - 6,  BOARD_X + 20, "│");
+        mvprintw(BOARD_Y + bag_cursor    ,  BOARD_X + 20, "│");
+        mvprintw(BOARD_Y + bag_cursor + 3,  BOARD_X + 20, "│");
         mvprintw(BOARD_Y - 2, BOARD_X + 1, "!execute!");
         wattron(execute_move_window, COLOR_PAIR(board->bag[board->bag_index] + 16));
         wnoutrefresh(board_win);
@@ -371,27 +315,22 @@ game_state_t input_moves() {
         nodelay(stdscr, true);
         doupdate();
 
-        GAME_STATE = EXECUTE_MOVES;
         seq_len = seq_index;
         seq_index = 0;
         bag_cursor = 4;
-        return EXECUTE_MOVES;
+        return EXECUTE;
     }
     
-    debug_display(g_debug_verbosity);
     wnoutrefresh(input_move_window);
     wnoutrefresh(board_win);
 
     doupdate();
-    return INPUT_MOVES;
+    return THINK;
 }
 
             /* qwfpexecute */
 game_state_t execute_moves() {
     input = input_sequence[seq_index].motion;            
-    wnoutrefresh(execute_move_window);
-    doupdate();
-    napms(execution_speed);
     switch (input) {                    
         case ROTATE_CCW:                          
             wprintw(execute_move_window, "↶");
@@ -435,45 +374,38 @@ game_state_t execute_moves() {
             }
             break;
         case HARD_DROP:
-            wprintw(execute_move_window, "!\n");
             mino_render(0);           
+            wprintw(execute_move_window, "!\n");
             state_update = mino_resolve_motion(HARD_DROP); // increments bag_index
             hold_available = true;
-            stats.pc += 1;
             wattron(execute_move_window, COLOR_PAIR(board->bag[board->bag_index] + 16));
             break;
         case SOFT_DROP:
             wprintw(execute_move_window, "⌄");
             mino_render(0);
-            //if (
-                mino_resolve_motion(SOFT_DROP);
-                //== 3) {
-                //wnoutrefresh(board_win);
-            //}
+            mino_resolve_motion(SOFT_DROP);
             break;
         case HOLD:
-            // TODO: fix hold
-            wprintw(execute_move_window, "H-");
-            wattron(execute_move_window, COLOR_PAIR(mino->type + 16));
-            wprintw(execute_move_window, ">SWAP\n");
             if (hold_available) {
                 mino_render(0);
                 if (hold == NOPIECE) {
                     hold = mino->type;
                     mino_reset(bag_next());
-                    _render_bag();
+                    bag_q_render(0, 4);
                 } else {
                     hold ^= mino->type;
                     mino->type ^= hold;
                     hold ^= mino->type;
                     mino_reset(mino->type);
                 }
+                wprintw(execute_move_window, "H-");
+                wattron(execute_move_window, COLOR_PAIR(mino->type + 16));
+                wprintw(execute_move_window, ">SWAP\n");
                 hold_available = false;
                 mino_render(1);
+                sprite_draw_yx(sprites, &sprite_data[hold], BOARD_Y + 2, BOARD_X - 9);
                 wnoutrefresh(board_win);
-            } else {
-                // flash hold mino
-            }
+            } 
             break;
         case 'q':
             board_init_sll(true);
@@ -481,32 +413,35 @@ game_state_t execute_moves() {
             free(board);
             endwin();
             printf("\033[?1003l\n"); // Disable mouse movement events, as l = low
-            return EXIT_THINK_EXECUTE;
+            return QUIT;
     }
     mino_render(1);
     wnoutrefresh(board_win);
+    wnoutrefresh(execute_move_window);
+    doupdate();
+    napms(execution_speed);
 
         // Reset Motion and increment 
     input_sequence[seq_index].motion = NO_MOTION;
     input_sequence[seq_index].count = 0;
     seq_index++;
 
+
     if (seq_index >= seq_len) {
-        GAME_STATE = INPUT_MOVES;
         seq_index = 0; 
         seq_len = 0; 
         piece_count = 0;
         mino_render(0);
         mvprintw(BOARD_Y - 2, BOARD_X + 1, " !think! ");
         doupdate();
-        return INPUT_MOVES;
+        return THINK;
     }
-    napms(execution_speed / 2);
-    return EXECUTE_MOVES;
+    return EXECUTE;
 }
 
 void ui_make_message(WINDOW *window , char *msg, int y, int x) {
     mvwaddstr(window, y, x, msg);
+    // TODO
 }
 
 void edit_board() {
@@ -600,4 +535,30 @@ void edit_board() {
     nodelay(board_win, 1);
 
     printf("\033[?1003l\n"); // Disable mouse movement events, as l = low
+}
+
+void bag_q_render(int from_idx, int queue_len) {
+    for (int i = 0; i < queue_len; i++) {
+        sprite_draw_yx(sprites,
+                       &sprite_data[board->bag[(board->bag_index + i + from_idx) % 14]],
+                       BOARD_Y + 5 + (i * 3),
+                       BOARD_X + 21);
+    }
+}
+
+void bag_cursor_render(int *bag_cursor) {
+    attron(COLOR_PAIR(12));
+    mvprintw(BOARD_Y + *bag_cursor    ,  BOARD_X + 20, "├────────╮");
+    mvprintw(BOARD_Y + *bag_cursor + 3,  BOARD_X + 20, "├────────╯");
+    attron(COLOR_PAIR(8));
+    mvprintw(BOARD_Y + *bag_cursor    ,  BOARD_X + 20, "│");
+    mvprintw(BOARD_Y + *bag_cursor + 3,  BOARD_X + 20, "│");
+    *bag_cursor += 3;
+    mvprintw(BOARD_Y + *bag_cursor    ,  BOARD_X + 20, "├────────╮");
+    mvprintw(BOARD_Y + *bag_cursor + 3,  BOARD_X + 20, "├────────╯");
+}
+
+void all_delay_set(bool state) {
+    nodelay(stdscr, state);
+    nodelay(board_win, state);
 }

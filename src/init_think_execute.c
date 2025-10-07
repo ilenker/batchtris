@@ -8,13 +8,17 @@
 
 #define COLOR_ORANGE     9
 #define COLOR_PURPLE    10
-#define COLOR_GREY      11
+#define BB               9
+#define WB               8
 
 WINDOW *board_win;
 WINDOW *sprites;
 WINDOW *input_move_window;
 WINDOW *execute_move_window;
 WINDOW *debug_window;
+WINDOW *menu_main;
+WINDOW *menu_options;
+WINDOW *menu_controls;
 board_t *board;
 mino_t *mino;
 int BOARD_Y;
@@ -37,7 +41,6 @@ void init_think_execute() {
     init_color(COLOR_WHITE, 929, 808, 905);
     init_color(COLOR_ORANGE, 929, 500, 100);
     init_color(COLOR_PURPLE, 650, 20, 900);
-    init_color(COLOR_GREY, 113, 113, 127);
     init_color(COLOR_BLUE, 250, 320, 810);
     init_pair(1, COLOR_CYAN, COLOR_CYAN);            // I
     init_pair(2, COLOR_YELLOW, COLOR_YELLOW);       // O 
@@ -48,9 +51,7 @@ void init_think_execute() {
     init_pair(7, COLOR_PURPLE, COLOR_PURPLE);  // T
     init_pair(8, COLOR_WHITE, COLOR_BLACK);  // Text 
     init_pair(9, COLOR_BLACK, COLOR_BLACK);   // Blank 
-    init_pair(10, COLOR_WHITE, COLOR_GREY); // Text 
-    init_pair(11, COLOR_GREY, COLOR_BLACK); // Text 
-    init_pair(12, COLOR_GREY, COLOR_GREY); // Text 
+    init_pair(10, COLOR_WHITE, COLOR_BLACK); // Text 
         // Mino colours for text
     init_pair(17, COLOR_CYAN, COLOR_BLACK);          // I
     init_pair(18, COLOR_YELLOW, COLOR_BLACK);       // O 
@@ -59,17 +60,15 @@ void init_think_execute() {
     init_pair(21, COLOR_GREEN, COLOR_BLACK);     // S
     init_pair(22, COLOR_RED, COLOR_BLACK);      // Z
     init_pair(23, COLOR_PURPLE, COLOR_BLACK);  // T
-    wbkgd(stdscr, COLOR_PAIR(10) );
 
-           /* BOARD WINDOW INIT */
+           /* BOARD WINDOW */
     BOARD_Y = LINES / 2 - 10;
     BOARD_X = COLS / 2 - 10;
     board_win = newwin(20, 20, BOARD_Y, BOARD_X); // 20x20 board at y=6, x=6  
     scrollok(board_win, 0);
     leaveok(board_win, 1);
     nodelay(board_win, 1);
-    wclear(stdscr);
-    wbkgd(board_win, COLOR_PAIR(9) | '9');
+    wbkgd(board_win, COLOR_PAIR(BB) | '9');
     refresh();
 
     board = calloc(1, sizeof(board_t));
@@ -88,37 +87,55 @@ void init_think_execute() {
     row_iterator(NULL, 1);  
     board_init(20, 10);
 
-            /* MINO INIT */
+            /* MINO */
     mino = mino_init(board->bag[0]);
 
-         /* SPRITE PAD INIT */
+         /* SPRITE PAD */
     sprites = newpad(16, 16); 
 
          /* THINK EXECUTE WINDOWS */
-    input_move_window = newwin(10, 9, BOARD_Y + 5, BOARD_X - 10); 
-    wattron(input_move_window, COLOR_PAIR(8));
+    input_move_window = newwin(10, 9, BOARD_Y + 5, BOARD_X - 11); 
+    wattron(input_move_window, COLOR_PAIR(WB));
     scrollok(input_move_window , 0);
     leaveok(input_move_window , 1);
-    nodelay(input_move_window , 1);
+    nodelay(input_move_window , 0);
     execute_move_window = newwin(10, 15, BOARD_Y + 5, BOARD_X + 30);
-    wattron(execute_move_window, COLOR_PAIR(8));
+    wattron(execute_move_window, COLOR_PAIR(WB));
     scrollok(execute_move_window , 0);
     leaveok(execute_move_window , 1);
-    nodelay(execute_move_window , 1);
+    nodelay(execute_move_window , 0);
 
     debug_window = newwin(10, 20, BOARD_Y + board->depth + 1, BOARD_X);
-    wattron(debug_window, COLOR_PAIR(8));
+    wattron(debug_window, COLOR_PAIR(WB));
     scrollok(debug_window, 0);
     leaveok(debug_window, 1);
-    nodelay(debug_window, 1);
+    nodelay(debug_window, 0);
 
-        /* UI BORDERS */
+
+
+            /* UI BORDERS */
     //╭────────╮
     //╰────────╯                       // 0123456789abcdefghijkl
-    mvprintw(BOARD_Y -  3, BOARD_X + 0,     "╭─────────╮");
-    mvprintw(BOARD_Y -  2, BOARD_X + 0,     "│         │");
+    mvaddstr(BOARD_Y -  3, BOARD_X + 0,     "╭─────────╮");
+    mvaddstr(BOARD_Y -  2, BOARD_X + 0,     "│         │");
     mvaddstr(BOARD_Y -  1, BOARD_X - 1,    "╭┴─────────┴─────────╮");
     for (int i = 0; i < 20; i++)
         mvaddstr(BOARD_Y + i, BOARD_X - 1, "│                    │");
+
     mvaddstr(BOARD_Y + 20, BOARD_X - 1,    "╰────────────────────╯");
+
+
+    mvaddstr(BOARD_Y +  4, BOARD_X - 12,        "╭─────────╮");
+    for (int i = 0; i < 11; i++)
+        mvaddstr(BOARD_Y + 5 + i, BOARD_X - 12, "│         │");
+
+    mvaddstr(BOARD_Y + 15, BOARD_X - 12,        "╰─────────╯");
+
+         /* Menu windows */
+    menu_main = newwin(12, 20, BOARD_Y + 4, BOARD_X); 
+    wattron(menu_main, COLOR_PAIR(WB));
+    scrollok(menu_main , 0);
+    leaveok(menu_main , 1);
+    nodelay(menu_main , 0);
+    mvwaddstr(menu_main, 0, 0, "arstarst");
 }

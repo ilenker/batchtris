@@ -17,11 +17,11 @@ typedef void (*event_function_t)(WINDOW *window, char *msg, int y, int x);
 
 typedef enum GlobalGameState {
     MENU,
-    INPUT_MOVES,
-    EXECUTE_MOVES,
+    THINK,
+    EXECUTE,
+    CLASSIC,
     RESULTS,
-    CLASSIC_TETRIS,
-    EXIT_THINK_EXECUTE,
+    QUIT,
 } game_state_t;
 
 
@@ -56,12 +56,14 @@ typedef struct Stats {
 } stats_t;
 
 void ui_make_message(WINDOW *window, char *msg, int y, int x);
-game_state_t mode_select();
 game_state_t classic_tetris();
 game_state_t input_moves();
 game_state_t execute_moves();
 void game_variables_init();
 void edit_board();
+void bag_cursor_render(int *bag_cursor); 
+void bag_q_render(int from_idx, int queue_len);
+void all_delay_set(bool state);
 
 typedef struct Sequence {
     event_t *frame[32];

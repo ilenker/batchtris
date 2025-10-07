@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "boardfunc.h"
+#include "menus.h"
 #include "sprites.h"
 #include "init_think_execute.h"
 #include "gameloops.h"
@@ -13,6 +14,7 @@ int main() {
     time_t t;
     srand(time(&t));
     init_think_execute();
+    menus_init();
 
     sprites_minos_init(sprites, &sprite_data[0]);
 
@@ -27,70 +29,59 @@ int main() {
     //first_seq->frame[20] = &ev2;
     //first_seq->active = false;
     //int timer = 0;
+
     game_variables_init();
 
-    refresh();
-    doupdate();
-
-    _menu_: ;
-    nodelay(stdscr, 0);
+_menu_: ;
     while (GAME_STATE == MENU) {
         GAME_STATE = mode_select();
     }
-    if (GAME_STATE == EXIT_THINK_EXECUTE) return 0;
 
-    nodelay(stdscr, 1);
+_classic_tetris_: ;
     refresh();
     doupdate();
-
-    while (GAME_STATE == CLASSIC_TETRIS) {
-        classic_tetris();
+    while (GAME_STATE == CLASSIC) {
+        GAME_STATE = classic_tetris();
     }
-    if (GAME_STATE == EXIT_THINK_EXECUTE) return 0;
 
-    if (GAME_STATE == MENU) {
-        goto _menu_;
+     // UI Setup 
+    if (GAME_STATE == THINK) {
+        mvprintw(BOARD_Y + 21, BOARD_X, "1-2-3-4-5-6-7-8-9 10");
+        mvprintw(BOARD_Y + 22, BOARD_X, "      ╰─home─╯      ");
+        nodelay(board_win, false);
+        nodelay(stdscr, false);
+        mvprintw(BOARD_Y - 2, BOARD_X + 1, "!think! ");
+        wnoutrefresh(board_win);
+        wnoutrefresh(input_move_window);
+        doupdate();
+        werase(input_move_window);
+        mvprintw(BOARD_Y + 4,  BOARD_X + 20, "├────────╮");
+        mvprintw(BOARD_Y + 7,  BOARD_X + 20, "├────────╯");
     }
-    if (GAME_STATE == EXIT_THINK_EXECUTE) return 0;
 
-    _inputmoves_: ; 
-    mvprintw(BOARD_Y + 21, BOARD_X, "1-2-3-4-5-6-7-8-9 10");
-    mvprintw(BOARD_Y + 22, BOARD_X, "      ╰─home─╯      ");
-    nodelay(board_win, false);
-    nodelay(stdscr, false);
-
-    mvprintw(BOARD_Y - 2, BOARD_X + 1, "!think! ");
-    wnoutrefresh(board_win);
-    wnoutrefresh(input_move_window);
-    doupdate();
-    werase(input_move_window);
-
-                    /* queue cursor */
-    mvprintw(BOARD_Y + 4,  BOARD_X + 20, "├────────╮");
-    mvprintw(BOARD_Y + 7,  BOARD_X + 20, "├────────╯");
-
-    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 0) % 14]], BOARD_Y + 5,  BOARD_X + 21);
-    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 1) % 14]], BOARD_Y + 8,  BOARD_X + 21);
-    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 2) % 14]], BOARD_Y + 11, BOARD_X + 21);
-    sprite_draw_yx(sprites, &sprite_data[board->bag[(board->bag_index + 3) % 14]], BOARD_Y + 14, BOARD_X + 21);
-
+_think_: ;
+    bag_q_render(0, 4);
     wattron(input_move_window, COLOR_PAIR(board->bag[board->bag_index] + 16));
-
-    while (GAME_STATE == INPUT_MOVES) {
+    while (GAME_STATE == THINK) {
         GAME_STATE = input_moves();
     }
-    if (GAME_STATE == EXIT_THINK_EXECUTE) return 0;
-
-    if (GAME_STATE == MENU) {
-        goto _menu_;
-    }
-    if (GAME_STATE == EXIT_THINK_EXECUTE) return 0;
-
     werase(execute_move_window);
-
-    while (GAME_STATE == EXECUTE_MOVES) {
+    while (GAME_STATE == EXECUTE) {
         GAME_STATE = execute_moves();
     }
-    if (GAME_STATE == EXIT_THINK_EXECUTE) return 0;
-    goto _inputmoves_;
+
+    switch (GAME_STATE) {
+        case THINK:
+            goto _think_;
+        case MENU:
+            goto _menu_;
+        case CLASSIC:
+            goto _classic_tetris_;
+        case RESULTS:
+            break;
+        case EXECUTE:
+            break;
+        case QUIT:
+            break;
+    }
 }

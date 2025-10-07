@@ -4,9 +4,6 @@
 #include "minofunc.h"
 #include "init_think_execute.h"
 
-#define __break {wclear(board->parent_window); board_render(board, board->parent_window); nodelay(board->parent_window, FALSE); 
-#define point__ refresh(); doupdate(); wgetch(board->parent_window); nodelay(board->parent_window, TRUE);}
-
 int bag_next() {
     board->bag_index = (board->bag_index + 1) % 14;
     if (board->bag_index == 0){

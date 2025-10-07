@@ -78,6 +78,8 @@ void mino_reset(shape_t type) {
             mino->v[2].dy = 0; 
             mino->v[2].dx = 1; 
             break;
+        case NOPIECE:
+            break;
     }
 }
 
@@ -393,9 +395,7 @@ void rotate_vector_BKP(vec_t *v, char dir) {
 }
 
 void debug_display(char verbosity) {
-    if (verbosity == 0) {
-        return;
-    }
+    char arstg;
     attron(COLOR_PAIR(8));
     switch (verbosity) {
         case 3:
@@ -418,7 +418,7 @@ void debug_display(char verbosity) {
             mvprintw(2, 11, "| [1]x: %d ", mino->v[1].dx);
             mvprintw(3, 3, "[2]y: %d ", mino->v[2].dy);
             mvprintw(3, 11, "| [2]x: %d ", mino->v[2].dx);
-        break;
+            break;
         case 1:
             //mvprintw(1, 3, "type: %d ", mino->type);
             mvprintw(1, 3, "limit: %d ", board->render_limit);
@@ -426,6 +426,35 @@ void debug_display(char verbosity) {
             mvprintw(3, 3, "y: %d ", mino->y);
             mvprintw(3, 11, "| x: %d ", mino->x);
             mvprintw(4, 3, "falling: %d ", mino->falling);
-        break;
+            break;
+        case 0:
+            switch (board->bag[board->bag_index]) {
+                case 1: arstg = 'I'; break;
+                case 2: arstg = 'O'; break;
+                case 3: arstg = 'J'; break;
+                case 4: arstg = 'L'; break;
+                case 5: arstg = 'S'; break;
+                case 6: arstg = 'Z'; break;
+                case 7: arstg = 'T'; break;
+            }
+            mvwprintw(stdscr, 0, 5, "%c", arstg);
+            mvwprintw(stdscr, 2, 5 + 14 + (board->bag_index * 3), "   ^ ");
+            mvwprintw(stdscr, 1, 5, "bag index (%2d): [%d, %d, %d, %d, %d, %d, %d]", board->bag_index,
+                      board->bag[0],
+                      board->bag[1],
+                      board->bag[2],
+                      board->bag[3],
+                      board->bag[4],
+                      board->bag[5],
+                      board->bag[6]);
+            wprintw(stdscr, "[%d, %d, %d, %d, %d, %d, %d]",
+                    board->bag[7],
+                    board->bag[8],
+                    board->bag[9],
+                    board->bag[10],
+                    board->bag[11],
+                    board->bag[12],
+                    board->bag[13]);
+            break;
     }
 }
