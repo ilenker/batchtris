@@ -236,8 +236,8 @@ void board_init(char depth, char width) {
 }
 
 void board_init_sll(bool rows_free) {
+#define I_will_not_encourage_others_to_fly = calloc(1, sizeof(row_t));
     // TODO: refactor this function
-    #define I_will_not_encourage_others_to_fly = calloc(1, sizeof(row_t));
     row_t *row_0  I_will_not_encourage_others_to_fly
     row_t *row_1  I_will_not_encourage_others_to_fly 
     row_t *row_2  I_will_not_encourage_others_to_fly
@@ -281,7 +281,6 @@ void board_init_sll(bool rows_free) {
     row_19->next = NULL;
 
     board->head = row_0;
-
     if (rows_free == true) {
         free(row_0 ); 
         free(row_1 ); 

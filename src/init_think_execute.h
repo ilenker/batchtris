@@ -11,13 +11,15 @@ extern WINDOW *sprites;
 extern WINDOW *input_move_window;
 extern WINDOW *execute_move_window;
 extern WINDOW *debug_window;
-extern WINDOW *menu_main;
-extern WINDOW *menu_options;
-extern WINDOW *menu_controls;
-extern board_t *board;
+extern WINDOW *main_win;
+extern WINDOW *options_win;
+extern WINDOW *controls_win;
+extern WINDOW *tooltip_win;
+extern WINDOW *ttbox_win;
 extern mino_t *mino;
+extern board_t *board;
 extern int BOARD_Y;
 extern int BOARD_X;
 
 
-void init_think_execute();
+void think_execute_init();

@@ -8,13 +8,16 @@
 #include "sprites.h"
 #include "gameloops.h"
 #include "init_think_execute.h"
+#include "menus.h"
 
 // general init 
 game_state_t GAME_STATE;
+game_state_t PREV_GAME_STATE;
 int state_update;
 char input;
 stats_t stats;
-int execution_speed;
+data_t *data_options;
+data_t *data_controls;
 
 bool hold_available;
 shape_t input_phase_hold;
@@ -34,6 +37,8 @@ row_t *row_iterator_index;
 void game_variables_init() {
     // General
     GAME_STATE = MENU;
+    PREV_GAME_STATE = MENU;
+
     hold_available = true;
     input_phase_hold = NOPIECE;
     hold = NOPIECE;
@@ -43,13 +48,11 @@ void game_variables_init() {
     stats.pps = 0.0f;
 
     // Classic Specific
-    g_gravity_timer = 500;
     
     // !think! !execute! Specific
     seq_index = 0; 
     seq_len = 0; 
     piece_count = 0;
-    execution_speed = 50;
     mn[0] = "↩";
     mn[1] = "↪";
     mn[2] = "π";
@@ -69,15 +72,14 @@ void game_variables_init() {
 game_state_t classic_tetris() {
 
     input = getch(); 
-    switch (input) {                    
-        case 'R':                          
-        case 'r':                          
+    input = input_remap(input);
+    switch (input) {
+        case 'r':
             mino_render(0);
             mino_resolve_motion(ROTATE_CCW);
             mino_render(1);
             wnoutrefresh(board_win);
             break;
-        case 'S':                           
         case 's':                           
             mino_render(0);
             mino_resolve_motion(ROTATE_CW);
@@ -141,14 +143,8 @@ game_state_t classic_tetris() {
                 wnoutrefresh(board_win);
             } 
             break;
-        case 'q':                   // TODO: This case segfaults, double free?
-            board_init_sll(true); 
-            free(mino);              
-            free(board);
-            endwin();
-            printf("\033[?1003l\n"); // Disable mouse movement events, as l = low
-            return QUIT;
-        case 'm':
+        case 27:
+            PREV_GAME_STATE = CLASSIC;
             return MENU;
             break;
         case '1':
@@ -156,13 +152,13 @@ game_state_t classic_tetris() {
             break;
     }
     if (g_gravity_timer < 0) {    // TODO: Delta time    
-        g_gravity_timer = 500;
+        g_gravity_timer = 20;
         mino_render(0);
         mino_resolve_motion(GRAVITY);
         mino_render(1);
         wnoutrefresh(board_win);
     }
-    g_gravity_timer -= 10;
+    g_gravity_timer -= data_options->items[0]->data.val;
 
     //if (first_seq->active && timer < 32) {
     //    if (first_seq->frame[timer]->type != event_null) {
@@ -245,6 +241,11 @@ game_state_t input_moves() {
         case 'A':
         case 'a':
             if (hold_available) {
+                int cury, curx;
+                getyx(input_move_window, cury, curx);
+                if (curx > 0) {
+                    wprintw(input_move_window, "\n");
+                }
                 wprintw(input_move_window, "H-");
                 sprite_draw_yx(sprites,   // Replace current piece on bag display with held piece
                                &sprite_data[input_phase_hold],
@@ -261,6 +262,7 @@ game_state_t input_moves() {
                     input_phase_hold = board->bag[(board->bag_index + piece_count) % 14];
                 }
                 hold_available = false;
+                sprite_draw_yx(sprites, &sprite_data[input_phase_hold], BOARD_Y + 2, BOARD_X - 9);
                
                 wprintw(input_move_window, ">SWAP\n");
                 input_sequence[seq_index].motion = HOLD;
@@ -285,14 +287,8 @@ game_state_t input_moves() {
                     COLOR_PAIR(board->bag[(piece_count + board->bag_index) % 14] + 16));
             wnoutrefresh(input_move_window);
             break; 
-        case 'q':
-            board_init_sll(true);
-            free(board);
-            free(mino);
-            endwin();
-            printf("\033[?1003l\n"); // Disable mouse movement events, as l = low
-            return QUIT;
-        case 'm':
+        case 27: 
+            PREV_GAME_STATE = THINK;
             return MENU;
             break;
     }
@@ -330,6 +326,9 @@ game_state_t input_moves() {
 
             /* qwfpexecute */
 game_state_t execute_moves() {
+    if (seq_index == 0) {
+        werase(execute_move_window);
+    }
     input = input_sequence[seq_index].motion;            
     switch (input) {                    
         case ROTATE_CCW:                          
@@ -356,7 +355,7 @@ game_state_t execute_moves() {
                 wnoutrefresh(execute_move_window);
                 wnoutrefresh(board_win);
                 doupdate();
-                napms(execution_speed);
+                napms(data_options->items[1]->data.val);
                 input_sequence[seq_index].count--;
             }
             break;
@@ -369,7 +368,7 @@ game_state_t execute_moves() {
                 wnoutrefresh(board_win);
                 wnoutrefresh(execute_move_window);
                 doupdate();
-                napms(execution_speed);
+                napms(data_options->items[1]->data.val);
                 input_sequence[seq_index].count--;
             }
             break;
@@ -387,6 +386,11 @@ game_state_t execute_moves() {
             break;
         case HOLD:
             if (hold_available) {
+                int cury, curx;
+                getyx(input_move_window, cury, curx);
+                if (curx > 0) {
+                    wprintw(input_move_window, "\n");
+                }
                 mino_render(0);
                 if (hold == NOPIECE) {
                     hold = mino->type;
@@ -398,6 +402,7 @@ game_state_t execute_moves() {
                     hold ^= mino->type;
                     mino_reset(mino->type);
                 }
+                wprintw(input_move_window, "\n");
                 wprintw(execute_move_window, "H-");
                 wattron(execute_move_window, COLOR_PAIR(mino->type + 16));
                 wprintw(execute_move_window, ">SWAP\n");
@@ -407,19 +412,12 @@ game_state_t execute_moves() {
                 wnoutrefresh(board_win);
             } 
             break;
-        case 'q':
-            board_init_sll(true);
-            free(mino);
-            free(board);
-            endwin();
-            printf("\033[?1003l\n"); // Disable mouse movement events, as l = low
-            return QUIT;
     }
     mino_render(1);
     wnoutrefresh(board_win);
     wnoutrefresh(execute_move_window);
     doupdate();
-    napms(execution_speed);
+    napms(data_options->items[1]->data.val);
 
         // Reset Motion and increment 
     input_sequence[seq_index].motion = NO_MOTION;
@@ -434,6 +432,7 @@ game_state_t execute_moves() {
         mino_render(0);
         mvprintw(BOARD_Y - 2, BOARD_X + 1, " !think! ");
         doupdate();
+        
         return THINK;
     }
     return EXECUTE;
@@ -448,12 +447,21 @@ void edit_board() {
     #define chtype_at_cursor mvwinch(board_win, xlate_y, xlate_x)
     #define empty '9'
 
-    // thank you to: https://gist.github.com/sylt/93d3f7b77e7f3a881603
+              // thank you to sylt: https://gist.github.com/sylt/93d3f7b77e7f3a881603
+              // for the guide on how to handle mouse input
+    
     // Enables keypad mode. This makes (at least for me) mouse events getting
     // reported as KEY_MOUSE, instead as of random letters.
     keypad(stdscr, TRUE);
     nodelay(stdscr, 0);
     nodelay(board_win, 0);
+
+    wmove(board_win, 0, 0);
+    for (int i = 1; i < 8; i++) {
+        wattron(board_win, COLOR_PAIR(i));
+        waddch(board_win, '0' + i);
+        waddch(board_win, '0' + i);
+    }
 
     mouseinterval(0);
 
@@ -469,13 +477,11 @@ void edit_board() {
     bool mb3_pressed;
     bool mb1_pressed;
     row_t *row_ptr;
+
     for (;;) { 
         c = getch();
-
         if (c == '\n')
             break;
-
-        char buffer[512];
         MEVENT event;
             /* Mouse event latching*/
         if (event.bstate & (BUTTON3_PRESSED)) {
@@ -490,19 +496,26 @@ void edit_board() {
         if (event.bstate & (BUTTON1_RELEASED)) {
             mb1_pressed = 0;
         }
-
         if (getmouse(&event) == OK) {
             xlate_y = (event.y - BOARD_Y);
             xlate_x = (event.x - BOARD_X) - (event.x - BOARD_X) % 2;
+
+            if (xlate_y == 0) {
+                if (mb3_pressed) {   // Pick char at cursor, allow picking of top row (0)
+                    picker_data = (A_CHARTEXT & mvwinch(board_win, xlate_y, xlate_x)) - '0';
+                }
+                continue;
+            }
 
             if ((xlate_y >= board->depth     || xlate_y < 0) ||
                 (xlate_x >= board->width * 2 || xlate_x < 0)   ) {
                 continue;
             }
 
-            if (mb3_pressed) {                                               // Pick char at cursor
+            if (mb3_pressed) {   // Pick char at cursor, allow picking of top row (0)
                 picker_data = board_data_at_yx(xlate_y, (int)(xlate_x / 2));
             }
+
 
             if (mb1_pressed) {                                               // Add char at cursor
                 row_ptr = row_at_index(xlate_y);
@@ -518,24 +531,16 @@ void edit_board() {
                 mvwaddch(board_win, xlate_y, xlate_x + 1, (picker_data + '0') | COLOR_PAIR(picker_data));
             }
         }
-
         wnoutrefresh(board_win);
-        move(0, 0);
-        addstr(buffer);
-        move(1, 0);
-        printw("x: %2d\ny: %2d\n", (int)(xlate_x / 2), xlate_y);
-        printw("picker_data: %d\n", picker_data);
-        printw("chat_curs: %c\n", chtype_at_cursor & A_CHARTEXT);
-        clrtoeol();
-        move(0, 0); 
         doupdate();
     }
-
+    wmove(board_win, 0, 0);
+    wclrtoeol(board_win);
     nodelay(stdscr, 1);
     nodelay(board_win, 1);
-
     printf("\033[?1003l\n"); // Disable mouse movement events, as l = low
 }
+
 
 void bag_q_render(int from_idx, int queue_len) {
     for (int i = 0; i < queue_len; i++) {
@@ -561,4 +566,13 @@ void bag_cursor_render(int *bag_cursor) {
 void all_delay_set(bool state) {
     nodelay(stdscr, state);
     nodelay(board_win, state);
+}
+
+char input_remap(char unmapped_input) {
+    for (int i = 0; i < 8; i++) {
+        if (unmapped_input == data_controls->items[i]->data.control) {
+            return data_controls->items[i]->data_default.control;
+        }
+    }
+    return unmapped_input;
 }

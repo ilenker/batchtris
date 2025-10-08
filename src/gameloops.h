@@ -64,6 +64,7 @@ void edit_board();
 void bag_cursor_render(int *bag_cursor); 
 void bag_q_render(int from_idx, int queue_len);
 void all_delay_set(bool state);
+char input_remap(char unmapped_input);
 
 typedef struct Sequence {
     event_t *frame[32];
@@ -76,6 +77,7 @@ extern int state_update;
 extern row_t *row_iterator_index;
 extern bool hold_available;
 extern game_state_t GAME_STATE;
+extern game_state_t PREV_GAME_STATE;
 extern shape_t hold;
 extern shape_t input_phase_hold;
 extern char g_debug_verbosity;
