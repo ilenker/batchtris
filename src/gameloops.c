@@ -14,7 +14,7 @@
 game_state_t GAME_STATE;
 game_state_t PREV_GAME_STATE;
 int state_update;
-char input;
+int input;
 stats_t stats;
 data_t *data_options;
 data_t *data_controls;
@@ -33,6 +33,15 @@ char *mn[9];
 char g_debug_verbosity;
 sprite_t sprite_data[16];
 row_t *row_iterator_index;
+
+//↶ ↷ π
+uint16_t cw[2] = {'C', 8631};
+uint16_t ccw[2] = {'@', 8630};
+uint16_t _180[2] = {'8', 960};
+uint16_t left[2] = {'<', 8592 };
+uint16_t right[2] = {'>', 8594};
+uint16_t hd[2] = {'!', '!'};
+uint16_t sd[2] = {'v', 8964};
 
 void game_variables_init() {
     // General
@@ -53,16 +62,6 @@ void game_variables_init() {
     seq_index = 0; 
     seq_len = 0; 
     piece_count = 0;
-    mn[0] = "↩";
-    mn[1] = "↪";
-    mn[2] = "π";
-    mn[3] = "←";
-    mn[4] = "→";
-    mn[5] = "!";
-    mn[6] = "⌄";
-    mn[7] = "H";
-    mn[8] = "no_motion";
-
     // Other
     g_debug_verbosity = 0;
 }
@@ -170,36 +169,39 @@ game_state_t classic_tetris() {
     //    }
     //}  
     if (state_update != SUCCESS_UPDATE) doupdate();
-    state_update = BETS_ARE_OFF;
+    state_update = -1;
     napms(17);
     return CLASSIC;
 }
 
                 /* qwfpinput */
 game_state_t input_moves() {
+    static int char_set;
     static int bag_cursor = 4;
     static int x_limit = 0;
-    static char *uc_width_adjust = "";
+    static int cury, curx;
+    char_set = data_options->items[2]->data.state;
     refresh();
     input = getch();            
+    input = input_remap(input);
     switch (input) {                    
         case 'R':                          
         case 'r':                          
             // TODO: figure out how to handle different fonts
             //       with varying unicode symbol widths
-            wprintw(input_move_window, "↶");  
+            wprintw(input_move_window, "%lc", ccw[char_set]);
             input_sequence[seq_index].motion = ROTATE_CCW;
             seq_index++;
             break;
         case 'S':                           
         case 's':                           
-            wprintw(input_move_window, "↷");
+            wprintw(input_move_window, "%lc", cw[char_set]);
             input_sequence[seq_index].motion = ROTATE_CW;
             seq_index++;
             break;
         case 'T':                            
         case 't':                            
-            wprintw(input_move_window, "π");
+            wprintw(input_move_window, "%lc", _180[char_set]);
             input_sequence[seq_index].motion = ROTATE_180;
             seq_index++;
             break;
@@ -210,7 +212,7 @@ game_state_t input_moves() {
                 break;
             }
             x_limit--;
-            wprintw(input_move_window, "%s%s", "←", uc_width_adjust);
+            wprintw(input_move_window, "%lc", left[char_set]);
             input_sequence[seq_index].motion = MOVE_LEFT;
             if (input_sequence[seq_index - 1].motion == MOVE_LEFT) {
                 input_sequence[seq_index - 1].count++;
@@ -223,7 +225,7 @@ game_state_t input_moves() {
                 break;
             }
             x_limit++;
-            wprintw(input_move_window, "%s%s", "→", uc_width_adjust);
+            wprintw(input_move_window, "%lc", right[char_set]);
             input_sequence[seq_index].motion = MOVE_RIGHT;
             if (input_sequence[seq_index - 1].motion == MOVE_RIGHT) {
                 input_sequence[seq_index - 1].count++;
@@ -233,7 +235,7 @@ game_state_t input_moves() {
             break;
         case 'Z':
         case 'z':
-            wprintw(input_move_window, "⌄");
+            wprintw(input_move_window, "%lc", sd[char_set]);
             input_sequence[seq_index].motion = SOFT_DROP;
             seq_index++;
             break;
@@ -241,7 +243,6 @@ game_state_t input_moves() {
         case 'A':
         case 'a':
             if (hold_available) {
-                int cury, curx;
                 getyx(input_move_window, cury, curx);
                 if (curx > 0) {
                     wprintw(input_move_window, "\n");
@@ -275,8 +276,12 @@ game_state_t input_moves() {
             }
             break;
         case ' ':
+            getyx(input_move_window, cury, curx);
+            wprintw(input_move_window, "!");
+            if (curx != 8) {
+                wprintw(input_move_window, "\n");
+            }
             piece_count++;
-            wprintw(input_move_window, "!\n");
             input_sequence[seq_index].motion = HARD_DROP;
             hold_available = true;
             seq_index++;
@@ -290,6 +295,9 @@ game_state_t input_moves() {
         case 27: 
             PREV_GAME_STATE = THINK;
             return MENU;
+            break;
+        case KEY_RESIZE:
+            display_reset(); 
             break;
     }
 
@@ -326,29 +334,34 @@ game_state_t input_moves() {
 
             /* qwfpexecute */
 game_state_t execute_moves() {
+    static int char_set;
+    char_set = data_options->items[2]->data.state;
     if (seq_index == 0) {
         werase(execute_move_window);
     }
     input = input_sequence[seq_index].motion;            
     switch (input) {                    
         case ROTATE_CCW:                          
-            wprintw(execute_move_window, "↶");
+            wprintw(execute_move_window, "%lc", ccw[char_set]);
             mino_render(0);
             mino_resolve_motion(ROTATE_CCW);
+            napms(data_options->items[1]->data.val);
             break;
         case ROTATE_CW:                           
-            wprintw(execute_move_window, "↷");
+            wprintw(execute_move_window, "%lc", cw[char_set]);
             mino_render(0);
             mino_resolve_motion(ROTATE_CW);
+            napms(data_options->items[1]->data.val);
             break;
         case ROTATE_180:                            
-            wprintw(execute_move_window, "π");
+            wprintw(execute_move_window, "%lc", _180[char_set]);
             mino_render(0);
             mino_resolve_motion(ROTATE_180);
+            napms(data_options->items[1]->data.val);
             break;
         case MOVE_LEFT:                             
             while (input_sequence[seq_index].count >= 0) {
-                wprintw(execute_move_window, "←");
+                wprintw(execute_move_window, "%lc", left[char_set]);
                 mino_render(0);
                 mino_resolve_motion(MOVE_LEFT);
                 mino_render(1);
@@ -361,7 +374,7 @@ game_state_t execute_moves() {
             break;
         case MOVE_RIGHT:
             while (input_sequence[seq_index].count >= 0) {
-                wprintw(execute_move_window, "→");
+                wprintw(execute_move_window, "%lc", right[char_set]);
                 mino_render(0);
                 mino_resolve_motion(MOVE_RIGHT);
                 mino_render(1);
@@ -378,18 +391,20 @@ game_state_t execute_moves() {
             state_update = mino_resolve_motion(HARD_DROP); // increments bag_index
             hold_available = true;
             wattron(execute_move_window, COLOR_PAIR(board->bag[board->bag_index] + 16));
+            napms(data_options->items[1]->data.val * 2);
             break;
         case SOFT_DROP:
-            wprintw(execute_move_window, "⌄");
+            wprintw(execute_move_window, "%lc", sd[char_set]);
             mino_render(0);
             mino_resolve_motion(SOFT_DROP);
+            napms(data_options->items[1]->data.val);
             break;
         case HOLD:
             if (hold_available) {
                 int cury, curx;
-                getyx(input_move_window, cury, curx);
+                getyx(execute_move_window, cury, curx);
                 if (curx > 0) {
-                    wprintw(input_move_window, "\n");
+                    wprintw(execute_move_window, "\n");
                 }
                 mino_render(0);
                 if (hold == NOPIECE) {
@@ -402,7 +417,7 @@ game_state_t execute_moves() {
                     hold ^= mino->type;
                     mino_reset(mino->type);
                 }
-                wprintw(input_move_window, "\n");
+                wprintw(execute_move_window, "\n");
                 wprintw(execute_move_window, "H-");
                 wattron(execute_move_window, COLOR_PAIR(mino->type + 16));
                 wprintw(execute_move_window, ">SWAP\n");
@@ -410,6 +425,7 @@ game_state_t execute_moves() {
                 mino_render(1);
                 sprite_draw_yx(sprites, &sprite_data[hold], BOARD_Y + 2, BOARD_X - 9);
                 wnoutrefresh(board_win);
+                napms(data_options->items[1]->data.val);
             } 
             break;
     }
@@ -417,7 +433,6 @@ game_state_t execute_moves() {
     wnoutrefresh(board_win);
     wnoutrefresh(execute_move_window);
     doupdate();
-    napms(data_options->items[1]->data.val);
 
         // Reset Motion and increment 
     input_sequence[seq_index].motion = NO_MOTION;
@@ -568,10 +583,34 @@ void all_delay_set(bool state) {
     nodelay(board_win, state);
 }
 
-char input_remap(char unmapped_input) {
+int input_remap(int unmapped_input) {
     for (int i = 0; i < 8; i++) {
-        if (unmapped_input == data_controls->items[i]->data.control) {
-            return data_controls->items[i]->data_default.control;
+        switch (unmapped_input) {
+            case KEY_DOWN:
+                if (data_controls->items[i]->data.control == 2) {
+                    return data_controls->items[i]->data_default.control;
+                }
+                break;
+            case KEY_UP:
+                if (data_controls->items[i]->data.control == 3) {
+                    return data_controls->items[i]->data_default.control;
+                }
+                break;
+            case KEY_LEFT:
+                if (data_controls->items[i]->data.control == 4) {
+                    return data_controls->items[i]->data_default.control;
+                }
+                break;
+            case KEY_RIGHT:
+                if (data_controls->items[i]->data.control == 5) {
+                    return data_controls->items[i]->data_default.control;
+                }
+                break;
+            default:
+                if (unmapped_input == data_controls->items[i]->data.control) {
+                    return data_controls->items[i]->data_default.control;
+                }
+                break;
         }
     }
     return unmapped_input;

@@ -11,6 +11,7 @@
 #include "gameloops.h"
 
 int main() {
+_reset_: ;
     time_t t;
     srand(time(&t));
     think_execute_init();
@@ -25,10 +26,14 @@ _menu_: ;
     while (GAME_STATE == MENU) {
         GAME_STATE = mode_select();
     }
+    if (GAME_STATE == RESET) {
+        goto _reset_;
+    } 
 
 _classic_tetris_: ;
     refresh();
     doupdate();
+    bag_q_render(1, 4);
     while (GAME_STATE == CLASSIC) {
         GAME_STATE = classic_tetris();
     }
@@ -70,6 +75,8 @@ _think_: ;
         case RESULTS:
             break;
         case EXECUTE:
+            break;
+        case RESET:
             break;
         case QUIT:
             break;

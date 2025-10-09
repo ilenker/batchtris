@@ -145,6 +145,7 @@ int row_process(int row, stackop_t operation) {
             }
             return ptr;
     }
+    return ptr;
 }
 
 void row_clear(int fullrow, int n) {
@@ -308,9 +309,6 @@ void board_init_sll(bool rows_free) {
 void bag_render() {
     for (int i = 0; i < QUEUE_PREVIEW_LENGTH; i++) {
     } 
-}
-void board_free_sll() {
-    // TODO: refactor this function
 }
 // Reverse a List
 //:'t+1,.g/^/m 't

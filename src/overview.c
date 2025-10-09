@@ -1,13 +1,18 @@
 /*    (^=__=^)
  *    ~Overview~                      
- *                                    [complexity][time]  
  *                                      
  *  
+ *  TODO: fix the menu jank (x on side of box when change setting)
+ *  TODO: reset to default controls
+ *  TODO: fix input display clearing after menu open (where is the cursor before closing?)
+ *  TODO: make soft reset, resetting like it is now is bad.
+ *
  *  TODO: choose predefined schemes 
  *  TODO: Test time limit mechanic for think/exec
  *  TODO: Implement fail states
- *  TODO: Tooltips
+ *     
  *       
+ *                                    [complexity][time]  
  *  FUNDAMENTAL MECHANICS    
  *     |_scoring                      [medium]    [mid]   <<< maybe later
  *     \_combos and B2Bs              [medium]    [mid]   <<< maybe laterer

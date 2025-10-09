@@ -40,32 +40,7 @@ void think_execute_init() {
     keypad(stdscr, 1);
     ESCDELAY = 0;
 
-    // TODO: support 8 color terminals
-    start_color();
-    init_color(COLOR_WHITE, 947, 838, 931);
-    init_color(COLOR_DGREY, 40, 30, 40);
-    init_color(COLOR_ORANGE, 929, 500, 100);
-    init_color(COLOR_PURPLE, 650, 20, 900);
-    init_color(COLOR_BLUE, 250, 320, 810);
-    init_color(COLOR_BLUE, 250, 320, 810);
-    init_pair(1, COLOR_CYAN, COLOR_CYAN);            // I
-    init_pair(2, COLOR_YELLOW, COLOR_YELLOW);        // O 
-    init_pair(3, COLOR_BLUE, COLOR_BLUE);            // J
-    init_pair(4, COLOR_ORANGE, COLOR_ORANGE);        // L
-    init_pair(5, COLOR_GREEN, COLOR_GREEN);          // S
-    init_pair(6, COLOR_RED, COLOR_RED);              // Z
-    init_pair(7, COLOR_PURPLE, COLOR_PURPLE);        // T
-    init_pair(8, COLOR_WHITE, COLOR_BLACK);          // Text 
-    init_pair(9, COLOR_BLACK, COLOR_BLACK);          // Blank 
-    init_pair(10, COLOR_WHITE, COLOR_DGREY);         // Tooltip 
-        // Mino colours for text
-    init_pair(17, COLOR_CYAN, COLOR_BLACK);          // I
-    init_pair(18, COLOR_YELLOW, COLOR_BLACK);        // O 
-    init_pair(19, COLOR_BLUE, COLOR_BLACK);          // J
-    init_pair(20, COLOR_ORANGE, COLOR_BLACK);        // L
-    init_pair(21, COLOR_GREEN, COLOR_BLACK);         // S
-    init_pair(22, COLOR_RED, COLOR_BLACK);           // Z
-    init_pair(23, COLOR_PURPLE, COLOR_BLACK);        // T
+    colors_init(false);
 
      /* BOARD WINDOW */
     BOARD_Y = LINES / 2 - 10;
@@ -171,4 +146,56 @@ void think_execute_init() {
     scrollok(tooltip_win , 0);
     leaveok(tooltip_win , 1);
     nodelay(tooltip_win , 0);
+}
+
+void display_reset() {
+    BOARD_Y = LINES / 2 - 10;
+    BOARD_X = COLS / 2 - 10;
+}
+
+void colors_init(bool standard) {
+    start_color();
+    if (!standard) {
+        init_color(COLOR_WHITE, 947, 838, 931);
+        init_color(COLOR_DGREY, 40, 30, 40);
+        init_color(COLOR_ORANGE, 929, 500, 100);
+        init_color(COLOR_PURPLE, 650, 20, 900);
+        init_color(COLOR_BLUE, 250, 320, 810);
+        init_pair(1, COLOR_CYAN, COLOR_CYAN);            // I
+        init_pair(2, COLOR_YELLOW, COLOR_YELLOW);        // O 
+        init_pair(3, COLOR_BLUE, COLOR_BLUE);            // J
+        init_pair(4, COLOR_ORANGE, COLOR_ORANGE);        // L
+        init_pair(5, COLOR_GREEN, COLOR_GREEN);          // S
+        init_pair(6, COLOR_RED, COLOR_RED);              // Z
+        init_pair(7, COLOR_PURPLE, COLOR_PURPLE);        // T
+        init_pair(8, COLOR_WHITE, COLOR_BLACK);          // Text 
+        init_pair(9, COLOR_BLACK, COLOR_BLACK);          // Blank 
+        init_pair(10, COLOR_WHITE, COLOR_DGREY);         // Tooltip 
+        // Mino colours for text
+        init_pair(17, COLOR_CYAN, COLOR_BLACK);          // I
+        init_pair(18, COLOR_YELLOW, COLOR_BLACK);        // O 
+        init_pair(19, COLOR_BLUE, COLOR_BLACK);          // J
+        init_pair(20, COLOR_ORANGE, COLOR_BLACK);        // L
+        init_pair(21, COLOR_GREEN, COLOR_BLACK);         // S
+        init_pair(22, COLOR_RED, COLOR_BLACK);           // Z
+        init_pair(23, COLOR_PURPLE, COLOR_BLACK);        // T
+    } else {
+        init_pair(1, COLOR_CYAN, COLOR_CYAN);            // I
+        init_pair(2, COLOR_YELLOW, COLOR_YELLOW);        // O 
+        init_pair(3, COLOR_BLUE, COLOR_BLUE);            // J
+        init_pair(4, COLOR_WHITE, COLOR_WHITE);          // L
+        init_pair(5, COLOR_GREEN, COLOR_GREEN);          // S
+        init_pair(6, COLOR_RED, COLOR_RED);              // Z
+        init_pair(7, COLOR_MAGENTA, COLOR_MAGENTA);      // T
+        init_pair(8, COLOR_WHITE, COLOR_BLACK);          // Text 
+        init_pair(9, COLOR_BLACK, COLOR_BLACK);          // Blank 
+        // Mino colours for text
+        init_pair(17, COLOR_CYAN, COLOR_BLACK);          // I
+        init_pair(18, COLOR_YELLOW, COLOR_BLACK);        // O 
+        init_pair(19, COLOR_BLUE, COLOR_BLACK);          // J
+        init_pair(20, COLOR_WHITE, COLOR_BLACK);         // L
+        init_pair(21, COLOR_GREEN, COLOR_BLACK);         // S
+        init_pair(22, COLOR_RED, COLOR_BLACK);           // Z
+        init_pair(23, COLOR_MAGENTA, COLOR_BLACK);       // T
+    }
 }

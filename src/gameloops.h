@@ -11,7 +11,6 @@
 #define SUCCESS_NOUPDATE 0
 #define SUCCESS_UPDATE   2
 #define FAIL_NOUPDATE    3
-#define BETS_ARE_OFF    -1
 
 typedef void (*event_function_t)(WINDOW *window, char *msg, int y, int x);
 
@@ -21,6 +20,7 @@ typedef enum GlobalGameState {
     EXECUTE,
     CLASSIC,
     RESULTS,
+    RESET,
     QUIT,
 } game_state_t;
 
@@ -64,7 +64,7 @@ void edit_board();
 void bag_cursor_render(int *bag_cursor); 
 void bag_q_render(int from_idx, int queue_len);
 void all_delay_set(bool state);
-char input_remap(char unmapped_input);
+int input_remap(int unmapped_input);
 
 typedef struct Sequence {
     event_t *frame[32];
@@ -72,7 +72,7 @@ typedef struct Sequence {
 } sequence_t;
 
 // general init 
-extern char input;
+extern int input;
 extern int state_update;
 extern row_t *row_iterator_index;
 extern bool hold_available;

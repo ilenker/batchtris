@@ -150,6 +150,8 @@ mino_t *mino_init(shape_t type) {
             new_mino->v[2].dy = 0; 
             new_mino->v[2].dx = 1; 
             break;
+        case NOPIECE:
+            return NULL;
     }
     return new_mino;
 }
@@ -158,7 +160,6 @@ mino_t *mino_init(shape_t type) {
 #define SUCCESS_NOUPDATE 0
 #define SUCCESS_UPDATE 2
 #define FAIL_NOUPDATE 3
-#define BETS_ARE_OFF -1
 
 int mino_resolve_motion(motion_t motion) {
     int peek = 0;
@@ -206,7 +207,6 @@ int mino_resolve_motion(motion_t motion) {
             }
             mino->x++;
             return SUCCESS_NOUPDATE;
-        // TODO: Rotation is more stable, bugs might still lurk
         case ROTATE_CW:
             mino_rotate(r270);
             for (int i = 0; i < 3; i++) {
@@ -229,9 +229,15 @@ int mino_resolve_motion(motion_t motion) {
                 }
             }
             return SUCCESS_NOUPDATE;
-        // TODO: Rotation is bugged I 180
         case ROTATE_180:
             mino_rotate(r180);
+            if (mino->type == I) { 
+                if (board_data_at_yx(mino->y, mino->x) != 9) {
+                    mino_rotate(r180);
+                    return FAIL_NOUPDATE;
+                } 
+            }
+
             for (int i = 0; i < 3; i++) {
                 int y_check = mino->y + mino->v[i].dy;
                 int x_check = mino->x + mino->v[i].dx;    
@@ -283,9 +289,11 @@ int mino_resolve_motion(motion_t motion) {
             return SUCCESS_UPDATE;
         case SOFT_DROP:   
             while (mino_resolve_motion(GRAVITY) != 3){} // Fall till obstacle
+            break;
         default:
-            return BETS_ARE_OFF;
+            return -1;
     }
+    return -1;
 }
 
 

@@ -23,3 +23,5 @@ extern int BOARD_X;
 
 
 void think_execute_init();
+void display_reset();
+void colors_init(bool standard);
